@@ -25,7 +25,6 @@ add_executable(${PROJECT_NAME}
 	)
 
 target_link_libraries(${PROJECT_NAME}
-	vita2d_sys
 	SceLibKernel_stub_weak
 	SceIofilemgr_stub 	
 	SceSysmodule_stub
