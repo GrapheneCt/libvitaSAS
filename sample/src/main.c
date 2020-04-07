@@ -24,8 +24,6 @@
 #define ADSR2 0
 
 extern void* sceClibMspaceCreate(void* base, uint32_t size);
-extern void* sceClibMspaceMalloc(void* space, uint32_t size);
-extern void sceClibMspaceFree(void* space, void* ptr);
 
 int main(void)
 {
