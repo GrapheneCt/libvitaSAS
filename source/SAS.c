@@ -14,7 +14,8 @@ extern void sceClibMspaceFree(void* space, void* ptr);
 
 static AudioOutWork s_audioOut;
 
-static void* mspace_internal;
+void* mspace_internal;
+unsigned int g_portIdBGM;
 
 static void *vitaSAS_internal_load_audio(const char *path, size_t *outSize, SceUID* mem_id_ret)
 {
@@ -42,7 +43,7 @@ static void *vitaSAS_internal_load_audio(const char *path, size_t *outSize, SceU
 		goto failed;
 	}
 
-	mem_size = ROUND_UP(size, 1024 * 1024);
+	mem_size = ROUND_UP(size, 4 * 1024);
 	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, mem_size, NULL);
 	sceKernelGetMemBlockBase(mem_id, &data);
 
@@ -78,7 +79,12 @@ void vitaSAS_finish(void)
 
 	vitaSAS_internal_audio_out_stop(&s_audioOut);
 
+	/* Release decoder BGM port */
+
+	sceAudioOutReleasePort(g_portIdBGM);
+
 	/* Exit SAS system */
+
 	sceSasExit(&buffer, &bufferSize);
 
 	sceClibMspaceFree(mspace_internal, buffer);
@@ -135,6 +141,14 @@ int vitaSAS_init(unsigned int outputPort, unsigned int numGrain, unsigned int th
 		return result;
 	}
 
+	/* Open BGM port for Codec Engine decoders */
+
+	g_portIdBGM = sceAudioOutOpenPort(
+		SCE_AUDIO_OUT_PORT_TYPE_BGM,
+		256, //This will be changed by decoder if needed
+		48000, //This will be changed by decoder if needed
+		SCE_AUDIO_OUT_PARAM_FORMAT_S16_STEREO); //This will be changed by decoder if needed
+
 	return result;
 }
 
@@ -167,22 +181,17 @@ vitaSASAudio* vitaSAS_load_audio_PCM(const char* soundPath)
 	return vitaSAS_load_audio_VAG(soundPath);
 }
 
-/*vitaSASAudio* vitaSAS_load_audio_AT9(const char* soundPath)
-{
-	return vitaSAS_internal_load_audio_AT9(soundPath);
-}*/
-
-void vitaSAS_internal_set_initial_params(unsigned int voiceID, unsigned int pitch, unsigned int volRDry,
-	unsigned int volLDry, unsigned int volRWet, unsigned int volLWet, unsigned int adsr1, unsigned int adsr2)
+void vitaSAS_internal_set_initial_params(unsigned int voiceID, unsigned int pitch, unsigned int volLDry,
+	unsigned int volRDry, unsigned int volLWet, unsigned int volRWet, unsigned int adsr1, unsigned int adsr2)
 {
 	sceSasSetPitch(voiceID, pitch);
 	sceSasSetVolume(voiceID, volLDry, volRDry, volLWet, volRWet);
 	sceSasSetSimpleADSR(voiceID, adsr1, adsr2);
 }
 
-void vitaSAS_create_voice_VAG(unsigned int voiceID, const vitaSASAudio* info, 
-	unsigned int loop, unsigned int pitch, unsigned int volRDry, unsigned int volLDry,
-	unsigned int volRWet, unsigned int volLWet, unsigned int adsr1, unsigned int adsr2)
+void vitaSAS_set_voice_VAG(unsigned int voiceID, const vitaSASAudio* info,
+	unsigned int loop, unsigned int pitch, unsigned int volLDry, unsigned int volRDry,
+	unsigned int volLWet, unsigned int volRWet, unsigned int adsr1, unsigned int adsr2)
 {
 	/* Set parameters for playing waveform */
 
@@ -191,12 +200,12 @@ void vitaSAS_create_voice_VAG(unsigned int voiceID, const vitaSASAudio* info,
 		(char*)info->datap + 48,
 		info->data_size - 48,
 		loop);
-	vitaSAS_internal_set_initial_params(voiceID, pitch, volRDry, volLDry, volRWet, volLWet, adsr1, adsr2);
+	vitaSAS_internal_set_initial_params(voiceID, pitch, volLDry, volRDry, volLWet, volRWet, adsr1, adsr2);
 }
 
-void vitaSAS_create_voice_PCM(unsigned int voiceID, const vitaSASAudio* info,
-	unsigned int loopSize, unsigned int pitch, unsigned int volRDry, unsigned int volLDry,
-	unsigned int volRWet, unsigned int volLWet, unsigned int adsr1, unsigned int adsr2)
+void vitaSAS_set_voice_PCM(unsigned int voiceID, const vitaSASAudio* info,
+	unsigned int loopSize, unsigned int pitch, unsigned int volLDry, unsigned int volRDry,
+	unsigned int volLWet, unsigned int volRWet, unsigned int adsr1, unsigned int adsr2)
 {
 	/* Set parameters for playing waveform */
 
@@ -205,16 +214,16 @@ void vitaSAS_create_voice_PCM(unsigned int voiceID, const vitaSASAudio* info,
 		(char*)info->datap,
 		info->data_size,
 		loopSize);
-	vitaSAS_internal_set_initial_params(voiceID, pitch, volRDry, volLDry, volRWet, volLWet, adsr1, adsr2);
+	vitaSAS_internal_set_initial_params(voiceID, pitch, volLDry, volRDry, volLWet, volRWet, adsr1, adsr2);
 }
 
-void vitaSAS_create_voice_noise(unsigned int voiceID, unsigned int clock, unsigned int pitch, unsigned int volRDry, 
-	unsigned int volLDry, unsigned int volRWet, unsigned int volLWet, unsigned int adsr1, unsigned int adsr2)
+void vitaSAS_set_voice_noise(unsigned int voiceID, unsigned int clock, unsigned int pitch, unsigned int volLDry,
+	unsigned int volRDry, unsigned int volLWet, unsigned int volRWet, unsigned int adsr1, unsigned int adsr2)
 {
 	/* Set parameters for playing waveform */
 
 	sceSasSetNoise(voiceID, clock);
-	vitaSAS_internal_set_initial_params(voiceID, pitch, volRDry, volLDry, volRWet, volLWet, adsr1, adsr2);
+	vitaSAS_internal_set_initial_params(voiceID, pitch, volLDry, volRDry, volLWet, volRWet, adsr1, adsr2);
 }
 
 void vitaSAS_set_effect(unsigned int effectType, unsigned int volL, unsigned int volR, unsigned int delayTime, unsigned int feedbackLevel)

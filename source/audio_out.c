@@ -1,16 +1,35 @@
-﻿#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <psp2/audioout.h> 
+﻿#include <psp2/audioout.h> 
 #include <psp2/kernel/clib.h> 
 #include <psp2/kernel/threadmgr.h> 
 
 #include "audio_out.h"
+#include "vitaSAS.h"
 
 #define CHANNEL_MAX					2
 #define BUFFER_MAX					2
 #define GRAIN_MAX					1024
+
+extern unsigned int g_portIdBGM;
+
+void vitaSAS_internal_output_for_decoder(Buffer *pOutput)
+{
+	if (pOutput != NULL) {
+
+		/* Output audio data*/
+
+		sceAudioOutOutput(g_portIdBGM, pOutput->op[pOutput->bufIndex]);
+
+		/* Swap buffers */
+
+		pOutput->bufIndex ^= 1;
+	}
+	else {
+		
+		/* Output remaining audio data */
+
+		sceAudioOutOutput(g_portIdBGM, NULL);
+	}
+}
 
 int vitaSAS_internal_update_thread(unsigned int args, void *argc)
 {
