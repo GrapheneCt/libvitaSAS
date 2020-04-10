@@ -62,6 +62,7 @@ void vitaSAS_free_audio(vitaSASAudio* info);
 
 vitaSASAudio* vitaSAS_load_audio_VAG(const char* soundPath);
 vitaSASAudio* vitaSAS_load_audio_PCM(const char* soundPath);
+vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize);
 
 /* Codec Engine decoding */
 
@@ -76,6 +77,7 @@ void vitaSAS_decoder_stop_playback(VitaSAS_Decoder* decoderInfo);
 void vitaSAS_decoder_seek(VitaSAS_Decoder* decoderInfo, unsigned int nEsSamples);
 void vitaSAS_decode_to_buffer(VitaSAS_Decoder* decoderInfo, unsigned int begEsSamples, unsigned int nEsSamples, uint8_t* buffer);
 unsigned int vitaSAS_decoder_get_current_es_offset(VitaSAS_Decoder* decoderInfo);
+unsigned int vitaSAS_decoder_get_end_state(VitaSAS_Decoder* decoderInfo);
 
 
 /* Voices */
