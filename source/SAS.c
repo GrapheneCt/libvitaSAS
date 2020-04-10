@@ -158,6 +158,22 @@ void vitaSAS_free_audio(vitaSASAudio* info)
 	sceClibMspaceFree(mspace_internal, info);
 }
 
+vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize)
+{
+	vitaSASAudio* info = sceClibMspaceMalloc(mspace_internal, sizeof(vitaSASAudio));
+
+	/* Load sound */
+
+	info->datap = pData;
+	info->data_size = dataSize;
+	info->data_id = 0;
+
+	if (info->datap == NULL)
+		return NULL;
+
+	return info;
+}
+
 vitaSASAudio* vitaSAS_load_audio_VAG(const char* soundPath)
 {
 	vitaSASAudio* info = sceClibMspaceMalloc(mspace_internal, sizeof(vitaSASAudio));
