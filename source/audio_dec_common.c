@@ -1,4 +1,5 @@
-﻿#include <psp2/codecengine.h> 
+﻿#include <arm_neon.h>
+#include <psp2/codecengine.h> 
 #include <psp2/kernel/clib.h> 
 #include <psp2/io/fcntl.h> 
 #include <psp2/kernel/sysmem.h> 
@@ -12,6 +13,17 @@ extern void* sceClibMspaceMalloc(void* space, unsigned int size);
 
 extern void* mspace_internal;
 extern unsigned int g_portIdBGM;
+
+void vitaSAS_separate_channels_PCM(short* pBufL, short* pBufR, short* pBufSrc, unsigned int BufSrcSize)
+{
+	unsigned int num16x8 = len_color / 8;
+	int16x8x2_t separated;
+	for (int i = 0; i < num16x8; i++) {
+		separated = vld2q_s16(pBufSrc + 2 * 8 * i);
+		vst1q_s16(pBufL + 8 * i, separated.val[0]);
+		vst1q_s16(pBufR + 8 * i, separated.val[1]);
+	}
+}
 
 int vitaSAS_internal_getFileSize(const char *pInputFileName, uint32_t *pInputFileSize)
 {
