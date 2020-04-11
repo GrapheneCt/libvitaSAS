@@ -87,6 +87,22 @@ int vitaSAS_internal_readFile(const char *pInputFileName, void *pInputBuf, uint3
 	return res;
 }
 
+void vitaSAS_internal_decode_to_buffer(SceAudiodecCtrl *pCtrl, Buffer *pInput, Buffer *pOutput)
+{
+	/* Set elementary stream and PCM buffer */
+
+	pCtrl->pEs = pInput->p + pInput->offsetR;
+	pCtrl->pPcm = pOutput->p + pOutput->offsetW;
+
+	/* Decode audio data */
+
+	sceAudiodecDecode(pCtrl);
+
+	/* Update offset */
+	pInput->offsetR += pCtrl->inputEsSize;
+	pOutput->offsetW = pOutput->offsetW + pOutput->size;
+}
+
 void vitaSAS_internal_decode(SceAudiodecCtrl *pCtrl, Buffer *pInput, Buffer *pOutput)
 {
 	/* Set elementary stream and PCM buffer */
@@ -195,33 +211,20 @@ unsigned int vitaSAS_decoder_get_end_state(VitaSAS_Decoder* decoderInfo)
 
 void vitaSAS_decode_to_buffer(VitaSAS_Decoder* decoderInfo, unsigned int begEsSamples, unsigned int nEsSamples, uint8_t* buffer)
 {
+	decoderInfo->pOutput->buf.offsetW = 0;
+	decoderInfo->pOutput->buf.p = buffer;
 	decoderInfo->pInput->buf.offsetR = decoderInfo->headerSize + decoderInfo->pAudiodecCtrl->inputEsSize * begEsSamples;
-
-	unsigned int offsetW = 0;
 
 	while (1) {
 
 		/* Check if there is any undecoded elementary stream */
 
 		if (decoderInfo->pInput->file.size <= decoderInfo->pInput->buf.offsetR ||
-			decoderInfo->pInput->buf.offsetR >= decoderInfo->headerSize + decoderInfo->pAudiodecCtrl->inputEsSize * nEsSamples) {
+			decoderInfo->pInput->buf.offsetR > decoderInfo->headerSize + decoderInfo->pAudiodecCtrl->inputEsSize * nEsSamples) {
 			break;
 		}
 
-		/* Set elementary stream and PCM buffer */
-
-		decoderInfo->pAudiodecCtrl->pEs = decoderInfo->pInput->buf.p + decoderInfo->pInput->buf.offsetR;
-		decoderInfo->pAudiodecCtrl->pPcm = buffer + offsetW;
-
-		/* Decode audio data */
-
-		sceAudiodecDecode(decoderInfo->pAudiodecCtrl);
-
-		/* Update offset */
-
-		decoderInfo->pInput->buf.offsetR += decoderInfo->pAudiodecCtrl->inputEsSize;
-		offsetW += offsetW + decoderInfo->pOutput->buf.size;
-
+		vitaSAS_internal_decode_to_buffer(decoderInfo->pAudiodecCtrl, &decoderInfo->pInput->buf, &decoderInfo->pOutput->buf);
 	}
 
 }
