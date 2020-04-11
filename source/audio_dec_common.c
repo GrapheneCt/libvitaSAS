@@ -203,7 +203,8 @@ unsigned int vitaSAS_decoder_get_current_es_offset(VitaSAS_Decoder* decoderInfo)
 
 unsigned int vitaSAS_decoder_get_end_state(VitaSAS_Decoder* decoderInfo)
 {
-	if (decoderInfo->pInput->file.size <= decoderInfo->pInput->buf.offsetR)
+	if (decoderInfo->pInput->file.size <= decoderInfo->pInput->buf.offsetR || 
+		decoderInfo->pInput->buf.offsetR == decoderInfo->headerSize)
 		return 1;
 	else
 		return 0;
