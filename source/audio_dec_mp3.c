@@ -14,17 +14,6 @@ extern unsigned int g_portIdBGM;
 
 int vitaSAS_internal_parseMpegHeader(MpegHeader *pHeader, const uint8_t * pBuf, unsigned int bufSize)
 {
-#ifdef DISPLAY_HEADER
-	const char *version[4] = {
-		"2.5",
-		"X",
-		"2",
-		"1",
-	};
-	const uint32_t layer[4] = {
-		0, 3, 2, 1
-	};
-#endif /* DISPLAY_HEADER */
 	const uint32_t bitRate[4][16] = {
 		{0,  8, 16, 24, 32, 40, 48, 56,  64,  80,  96, 112, 128, 144, 160}, // MPEG2.5
 		{0,  0,  0,  0,  0,  0,  0,  0,   0,   0,   0,   0,   0,   0,   0}, // reserved
@@ -76,24 +65,6 @@ int vitaSAS_internal_parseMpegHeader(MpegHeader *pHeader, const uint8_t * pBuf, 
 	pHeader->bitRate = bitRate[pHeader->version][pHeader->bitRateIndex];
 	pHeader->samplingRate = samplingRate[pHeader->version][pHeader->samplingRateIndex];
 	pHeader->channels = channels[pHeader->chMode];
-
-#ifdef DISPLAY_HEADER
-	sceClibPrintf("= MPEG Audio header ===============\n");
-	sceClibPrintf("syncWord                 : 0x%X (0xFFE fixed)\n", pHeader->syncWord);
-	sceClibPrintf("version                  : 0x%X (MPEG %s)\n", pHeader->version, version[pHeader->version]);
-	sceClibPrintf("layer                    : 0x%X (Layer %d)\n", pHeader->layer, layer[pHeader->layer]);
-	sceClibPrintf("protectionBit            : 0x%X\n", pHeader->protectionBit);
-	sceClibPrintf("bitRateIndex             : 0x%X (%u kbps)\n", pHeader->bitRateIndex, pHeader->bitRate);
-	sceClibPrintf("samplingRateIndex        : 0x%X (%u Hz)\n", pHeader->samplingRateIndex, pHeader->samplingRate);
-	sceClibPrintf("paddingBit               : 0x%X\n", pHeader->paddingBit);
-	sceClibPrintf("privateBit               : 0x%X\n", pHeader->privateBit);
-	sceClibPrintf("chMode                   : 0x%X (%u channels)\n", pHeader->chMode, pHeader->channels);
-	sceClibPrintf("modeExtension            : 0x%X\n", pHeader->modeExtension);
-	sceClibPrintf("copyrightBit             : 0x%X\n", pHeader->copyrightBit);
-	sceClibPrintf("originalBit              : 0x%X\n", pHeader->originalBit);
-	sceClibPrintf("emphasis                 : 0x%X\n", pHeader->emphasis);
-	sceClibPrintf("===================================\n");
-#endif /* DISPLAY_HEADER */
 
 	return 0;
 }
@@ -155,14 +126,20 @@ VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath)
 	pInput->buf.offsetR = 0;
 	decoderInfo->headerSize = 0;
 	
-	/* Allocate codec engine memory for decoder */
+	/* Initialize audiodec library */
 
-	CodecEngineMemBlock* codecMemBlock = vitaSAS_internal_allocate_memory_for_codec_engine(SCE_AUDIODEC_TYPE_MP3, pAudiodecCtrl);
-	decoderInfo->codecMemBlock = codecMemBlock;
+	SceAudiodecInitParam audiodecInitParam;
+
+	sceClibMemset(&audiodecInitParam, 0, sizeof(audiodecInitParam));
+
+	audiodecInitParam.size = sizeof(audiodecInitParam.mp3);
+	audiodecInitParam.mp3.totalStreams = 1;
+
+	sceAudiodecInitLibrary(SCE_AUDIODEC_TYPE_MP3, &audiodecInitParam);
 
 	/* Create a decoder */
 
-	sceAudiodecCreateDecoderExternal(pAudiodecCtrl, SCE_AUDIODEC_TYPE_MP3, codecMemBlock->vaContext, codecMemBlock->contextSize);
+	sceAudiodecCreateDecoder(pAudiodecCtrl, SCE_AUDIODEC_TYPE_MP3);
 
 	audioOut.grain = pAudiodecCtrl->maxPcmSize / pAudiodecCtrl->pInfo->mp3.ch / sizeof(int16_t);
 	audioOut.samplingRate = header.samplingRate;

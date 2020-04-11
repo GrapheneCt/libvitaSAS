@@ -134,6 +134,10 @@ void vitaSAS_decoder_start_playback(VitaSAS_Decoder* decoderInfo, unsigned int t
 {
 	SceUID decodeThread;
 
+	/* Reinitialize context */
+
+	sceAudiodecClearContext(decoderInfo->pAudiodecCtrl);
+
 	/* Reset es offset */
 
 	decoderInfo->pInput->buf.offsetR = decoderInfo->headerSize;
@@ -246,7 +250,6 @@ CodecEngineMemBlock* vitaSAS_internal_allocate_memory_for_codec_engine(unsigned 
 
 	contextSize = sceAudiodecGetContextSize(addecctrl, codecType);
 	if (contextSize <= 0) {
-		sceClibPrintf("%d", contextSize);
 		goto error;
 	}
 
@@ -303,8 +306,14 @@ void vitaSAS_destroy_decoder(VitaSAS_Decoder* decoderInfo)
 {
 	sceClibMspaceFree(mspace_internal, decoderInfo->pOutput->buf.op[0]);
 	sceClibMspaceFree(mspace_internal, decoderInfo->pOutput->buf.op[1]);
-	sceAudiodecDeleteDecoderExternal(decoderInfo->pAudiodecCtrl, &decoderInfo->codecMemBlock->vaContext);
-	vitaSAS_internal_free_memory_for_codec_engine(decoderInfo->codecMemBlock);
+	if (decoderInfo->pAudiodecCtrl->pInfo->size != sizeof(decoderInfo->pAudiodecCtrl->pInfo->mp3)) {
+		sceAudiodecDeleteDecoderExternal(decoderInfo->pAudiodecCtrl, &decoderInfo->codecMemBlock->vaContext);
+		vitaSAS_internal_free_memory_for_codec_engine(decoderInfo->codecMemBlock);
+	}
+	else {
+		sceAudiodecDeleteDecoder(decoderInfo->pAudiodecCtrl);
+		sceAudiodecTermLibrary(SCE_AUDIODEC_TYPE_MP3);
+	}
 	sceClibMspaceFree(mspace_internal, decoderInfo->codecMemBlock);
 	sceClibMspaceFree(mspace_internal, decoderInfo->pInput->buf.p);
 	sceClibMspaceFree(mspace_internal, decoderInfo->pAudiodecInfo);
