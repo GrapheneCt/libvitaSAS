@@ -64,6 +64,8 @@ vitaSASAudio* vitaSAS_load_audio_VAG(const char* soundPath);
 vitaSASAudio* vitaSAS_load_audio_PCM(const char* soundPath);
 vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize);
 
+void vitaSAS_separate_channels_PCM(short* pBufL, short* pBufR, short* pBufSrc, unsigned int BufSrcSize);
+
 /* Codec Engine decoding */
 
 void vitaSAS_destroy_decoder(VitaSAS_Decoder* decoderInfo);
