@@ -68,7 +68,7 @@ vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize);
 
 void vitaSAS_destroy_decoder(VitaSAS_Decoder* decoderInfo);
 VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath);
-//VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath);
+VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath);
 VitaSAS_Decoder* vitaSAS_create_AAC_decoder(const char* soundPath);
 void vitaSAS_decoder_start_playback(VitaSAS_Decoder* decoderInfo, unsigned int thPriority, unsigned int thStackSize, unsigned int thCpu);
 void vitaSAS_decoder_pause_playback(VitaSAS_Decoder* decoderInfo);
