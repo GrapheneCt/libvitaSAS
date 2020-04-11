@@ -14,9 +14,9 @@ extern void* sceClibMspaceMalloc(void* space, unsigned int size);
 extern void* mspace_internal;
 extern unsigned int g_portIdBGM;
 
-void vitaSAS_separate_channels_PCM(short* pBufL, short* pBufR, short* pBufSrc, unsigned int BufSrcSize)
+void vitaSAS_separate_channels_PCM(short* pBufL, short* pBufR, short* pBufSrc, unsigned int bufSrcSize)
 {
-	unsigned int num16x8 = len_color / 8;
+	unsigned int num16x8 = bufSrcSize / 8;
 	int16x8x2_t separated;
 	for (int i = 0; i < num16x8; i++) {
 		separated = vld2q_s16(pBufSrc + 2 * 8 * i);
