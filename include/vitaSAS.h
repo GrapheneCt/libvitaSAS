@@ -10,6 +10,8 @@ extern "C" {
 #define ROUND_UP(x, a)	((((unsigned int)x)+((a)-1u))&(~((a)-1u)))
 #define VITA_SAS_GRAIN_MAX 1024
 #define SCE_SAS_LOOP_DISABLE_PCM -1
+#define VITASAS_USE_MAIN_MEMORY 1
+#define VITASAS_USE_PHYCONT_MEMORY 0
 
 typedef struct vitaSASAudio {
 	void* datap;
@@ -69,9 +71,9 @@ void vitaSAS_separate_channels_PCM(short* pBufL, short* pBufR, short* pBufSrc, u
 /* Codec Engine decoding */
 
 void vitaSAS_destroy_decoder(VitaSAS_Decoder* decoderInfo);
-VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath);
+VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath, unsigned int useMainMem);
 VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath);
-VitaSAS_Decoder* vitaSAS_create_AAC_decoder(const char* soundPath);
+VitaSAS_Decoder* vitaSAS_create_AAC_decoder(const char* soundPath, unsigned int useMainMem);
 void vitaSAS_decoder_start_playback(VitaSAS_Decoder* decoderInfo, unsigned int thPriority, unsigned int thStackSize, unsigned int thCpu);
 void vitaSAS_decoder_pause_playback(VitaSAS_Decoder* decoderInfo);
 void vitaSAS_decoder_resume_playback(VitaSAS_Decoder* decoderInfo);
@@ -105,7 +107,7 @@ void vitaSAS_reset_effect(void);
 void vitaSAS_internal_set_initial_params(unsigned int voiceID, unsigned int pitch, unsigned int volLDry,
 	unsigned int volRDry, unsigned int volLWet, unsigned int volRWet, unsigned int adsr1, unsigned int adsr2);
 
-CodecEngineMemBlock* vitaSAS_internal_allocate_memory_for_codec_engine(unsigned int codecType, SceAudiodecCtrl* addecctrl);
+CodecEngineMemBlock* vitaSAS_internal_allocate_memory_for_codec_engine(unsigned int codecType, SceAudiodecCtrl* addecctrl, unsigned int useMainMem);
 void vitaSAS_internal_free_memory_for_codec_engine(const CodecEngineMemBlock* codecMemBlock);
 void vitaSAS_internal_output_for_decoder(Buffer *pOutput);
 int vitaSAS_internal_getFileSize(const char *pInputFileName, uint32_t *pInputFileSize);
