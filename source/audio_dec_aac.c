@@ -69,7 +69,7 @@ int vitaSAS_internal_parseAdtsHeader(AdtsHeader *pHeader, const uint8_t * pBuf, 
 	return 0;
 }
 
-VitaSAS_Decoder* vitaSAS_create_AAC_decoder(const char* soundPath)
+VitaSAS_Decoder* vitaSAS_create_AAC_decoder(const char* soundPath, unsigned int useMainMem)
 {
 	VitaSAS_Decoder* decoderInfo = sceClibMspaceMalloc(mspace_internal, sizeof(VitaSAS_Decoder));
 
@@ -131,7 +131,7 @@ VitaSAS_Decoder* vitaSAS_create_AAC_decoder(const char* soundPath)
 	
 	/* Allocate codec engine memory for decoder */
 
-	CodecEngineMemBlock* codecMemBlock = vitaSAS_internal_allocate_memory_for_codec_engine(SCE_AUDIODEC_TYPE_AAC, pAudiodecCtrl);
+	CodecEngineMemBlock* codecMemBlock = vitaSAS_internal_allocate_memory_for_codec_engine(SCE_AUDIODEC_TYPE_AAC, pAudiodecCtrl, useMainMem);
 	decoderInfo->codecMemBlock = codecMemBlock;
 
 	/* Create a decoder */

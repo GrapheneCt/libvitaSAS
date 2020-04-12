@@ -133,7 +133,7 @@ int vitaSAS_internal_parseRiffWaveHeaderForAt9(At9Header *pHeader, const uint8_t
 	return headerSize;
 }
 
-VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath)
+VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath, unsigned int useMainMem)
 {
 	VitaSAS_Decoder* decoderInfo = sceClibMspaceMalloc(mspace_internal, sizeof(VitaSAS_Decoder));
 
@@ -193,7 +193,7 @@ VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath)
 
 	/* Allocate codec engine memory for decoder */
 
-	CodecEngineMemBlock* codecMemBlock = vitaSAS_internal_allocate_memory_for_codec_engine(SCE_AUDIODEC_TYPE_AT9, pAudiodecCtrl);
+	CodecEngineMemBlock* codecMemBlock = vitaSAS_internal_allocate_memory_for_codec_engine(SCE_AUDIODEC_TYPE_AT9, pAudiodecCtrl, useMainMem);
 	decoderInfo->codecMemBlock = codecMemBlock;
 
 	/* Create a decoder */

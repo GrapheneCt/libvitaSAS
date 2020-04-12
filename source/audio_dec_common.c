@@ -249,7 +249,7 @@ void vitaSAS_internal_free_memory_for_codec_engine(const CodecEngineMemBlock* co
 	sceKernelFreeMemBlock(codecMemBlock->uidMemBlock);
 }
 
-CodecEngineMemBlock* vitaSAS_internal_allocate_memory_for_codec_engine(unsigned int codecType, SceAudiodecCtrl* addecctrl)
+CodecEngineMemBlock* vitaSAS_internal_allocate_memory_for_codec_engine(unsigned int codecType, SceAudiodecCtrl* addecctrl, unsigned int useMainMem)
 {
 	CodecEngineMemBlock* codecMemBlock = sceClibMspaceMalloc(mspace_internal, sizeof(CodecEngineMemBlock));
 
@@ -260,6 +260,7 @@ CodecEngineMemBlock* vitaSAS_internal_allocate_memory_for_codec_engine(unsigned 
 	void *pMemBlock = NULL;
 	unsigned int vaContext = 0;
 	unsigned int contextSize = 0;
+	unsigned int memBlockType = SCE_KERNEL_MEMBLOCK_TYPE_USER_MAIN_PHYCONT_NC_RW;
 	int res;
 
 	/* Obtain required memory size */
@@ -274,8 +275,11 @@ CodecEngineMemBlock* vitaSAS_internal_allocate_memory_for_codec_engine(unsigned 
 	/* Allocate a cache-disabled and physical continuous memory that is enabled for
 	reading and writing by the user */
 
+	if (useMainMem)
+		memBlockType = SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE;
+
 	uidMemBlock = sceKernelAllocMemBlock("vitaSAS_codec_engine",
-		SCE_KERNEL_MEMBLOCK_TYPE_USER_MAIN_PHYCONT_NC_RW, memBlockSize, NULL);
+		memBlockType, memBlockSize, NULL);
 	if (uidMemBlock < 0) {
 		goto error;
 	}
