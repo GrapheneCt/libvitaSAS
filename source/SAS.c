@@ -7,6 +7,7 @@
 #include <psp2/sas.h>
 
 #include "audio_out.h"
+#include "fios2ac.h"
 #include "vitaSAS.h"
 
 extern void* sceClibMspaceMalloc(void* space, unsigned int size);
@@ -17,8 +18,64 @@ static AudioOutWork s_audioOut;
 void* mspace_internal;
 unsigned int g_portIdBGM;
 
-static void *vitaSAS_internal_load_audio(const char *path, size_t *outSize, SceUID* mem_id_ret)
+static void *vitaSAS_internal_load_audio_FIOS2(char *mountedFilePath, size_t *outSize, SceUID* mem_id_ret)
 {
+	void *data;
+	SceUID mem_id;
+	SceFiosFH file;
+	int result, size;
+	unsigned int mem_size;
+	mem_id = 0;
+
+	file = 0;
+	data = NULL;
+
+	if (sceFiosFHOpenSync(NULL, &file, mountedFilePath, NULL) < 0) {
+		goto failed;
+	}
+
+	size = sceFiosFHSeek(file, 0, SCE_FIOS_SEEK_END);
+	if (size < 0) {
+		goto failed;
+	}
+
+	result = sceFiosFHSeek(file, 0, SCE_FIOS_SEEK_SET);
+	if (result < 0) {
+		goto failed;
+	}
+
+	mem_size = ROUND_UP(size, 4 * 1024);
+	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, mem_size, NULL);
+	sceKernelGetMemBlockBase(mem_id, &data);
+
+	result = sceFiosFHReadSync(NULL, file, data, size);
+	if (result < 0) {
+		goto failed;
+	}
+
+	sceFiosFHCloseSync(NULL, file);
+
+	if (outSize) *outSize = size;
+	*mem_id_ret = mem_id;
+
+	return data;
+
+failed:
+
+	sceKernelFreeMemBlock(mem_id);
+
+	if (0 < file) {
+		sceFiosFHCloseSync(NULL, file);
+	}
+
+	return NULL;
+}
+
+static void *vitaSAS_internal_load_audio(char *path, size_t *outSize, SceUID* mem_id_ret, int io_type)
+{
+	if (io_type == 1)
+		return vitaSAS_internal_load_audio_FIOS2(path, outSize, mem_id_ret);
+
 	void *data;
 	SceUID file, mem_id;
 	int result, size;
@@ -174,7 +231,7 @@ vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize)
 	return info;
 }
 
-vitaSASAudio* vitaSAS_load_audio_VAG(const char* soundPath)
+vitaSASAudio* vitaSAS_load_audio_VAG(char* soundPath, int io_type)
 {
 	vitaSASAudio* info = sceClibMspaceMalloc(mspace_internal, sizeof(vitaSASAudio));
 
@@ -182,7 +239,7 @@ vitaSASAudio* vitaSAS_load_audio_VAG(const char* soundPath)
 
 	size_t soundDataSize = 0;
 	SceUID mem_id = 0;
-	info->datap = vitaSAS_internal_load_audio(soundPath, &soundDataSize, &mem_id);
+	info->datap = vitaSAS_internal_load_audio(soundPath, &soundDataSize, &mem_id, io_type);
 	info->data_size = soundDataSize;
 	info->data_id = mem_id;
 
@@ -192,9 +249,9 @@ vitaSASAudio* vitaSAS_load_audio_VAG(const char* soundPath)
 	return info;
 }
 
-vitaSASAudio* vitaSAS_load_audio_PCM(const char* soundPath)
+vitaSASAudio* vitaSAS_load_audio_PCM(char* soundPath, int io_type)
 {
-	return vitaSAS_load_audio_VAG(soundPath);
+	return vitaSAS_load_audio_VAG(soundPath, io_type);
 }
 
 void vitaSAS_internal_set_initial_params(unsigned int voiceID, unsigned int pitch, unsigned int volLDry,

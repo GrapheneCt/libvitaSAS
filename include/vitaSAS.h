@@ -62,8 +62,8 @@ void vitaSAS_finish(void);
 int vitaSAS_init(unsigned int outputPort, unsigned int numGrain, unsigned int thPriority, unsigned int thStackSize, unsigned int thCpu);
 void vitaSAS_free_audio(vitaSASAudio* info);
 
-vitaSASAudio* vitaSAS_load_audio_VAG(const char* soundPath);
-vitaSASAudio* vitaSAS_load_audio_PCM(const char* soundPath);
+vitaSASAudio* vitaSAS_load_audio_VAG(char* soundPath, int io_type);
+vitaSASAudio* vitaSAS_load_audio_PCM(char* soundPath, int io_type);
 vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize);
 
 void vitaSAS_separate_channels_PCM(short* pBufL, short* pBufR, short* pBufSrc, unsigned int bufSrcSize);
