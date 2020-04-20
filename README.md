@@ -2,6 +2,8 @@
 Easy-to-use SceSas and libaudiodec library wrapper with system mode applications support.
 Refer to the sample for usage example.
 
+Loading directly from FIOS2 overlay (for example, loading directly from PSARC archive) is supported. When calling vitaSAS_load_audio_XXX() specify 1 for io_type to use FIOS2 or 0 to use SceIo.
+
 ## Native SAS playback:
 
 Only HE-ADPCM (.vag) and PCM (.pcm) files are supported.
