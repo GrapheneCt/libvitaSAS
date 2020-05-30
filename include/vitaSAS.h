@@ -59,7 +59,10 @@ typedef struct VitaSAS_Decoder {
 
 void vitaSAS_pass_mspace(void* mspace);
 void vitaSAS_finish(void);
-int vitaSAS_init(unsigned int outputPort, unsigned int numGrain, unsigned int thPriority, unsigned int thStackSize, unsigned int thCpu);
+
+int vitaSAS_init(unsigned int outputPort, unsigned int outputSamplingRate, unsigned int numGrain,
+	unsigned int thPriority, unsigned int thStackSize, unsigned int thCpu, unsigned int openBGM);
+
 void vitaSAS_free_audio(vitaSASAudio* info);
 
 vitaSASAudio* vitaSAS_load_audio_VAG(char* soundPath, int io_type);
