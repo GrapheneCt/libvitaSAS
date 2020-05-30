@@ -163,7 +163,8 @@ void vitaSAS_internal_update(void* buffer)
 	sceSasCore(buffer);
 }
 
-int vitaSAS_init(unsigned int outputPort, unsigned int numGrain, unsigned int thPriority, unsigned int thStackSize, unsigned int thCpu)
+int vitaSAS_init(unsigned int outputPort, unsigned int outputSamplingRate, unsigned int numGrain,
+	unsigned int thPriority, unsigned int thStackSize, unsigned int thCpu, unsigned int openBGM)
 {
 	const char sasConfig[] = "";
 	void *buffer;
@@ -193,18 +194,20 @@ int vitaSAS_init(unsigned int outputPort, unsigned int numGrain, unsigned int th
 
 	/* Start audioout server */
 
-	result = vitaSAS_internal_audio_out_start(&s_audioOut, outputPort, numGrain, vitaSAS_internal_update, thPriority, thStackSize, thCpu);
+	result = vitaSAS_internal_audio_out_start(&s_audioOut, outputPort, outputSamplingRate, numGrain, vitaSAS_internal_update, thPriority, thStackSize, thCpu);
 	if (result < 0) {
 		return result;
 	}
 
 	/* Open BGM port for Codec Engine decoders */
 
-	g_portIdBGM = sceAudioOutOpenPort(
-		SCE_AUDIO_OUT_PORT_TYPE_BGM,
-		256, //This will be changed by decoder if needed
-		48000, //This will be changed by decoder if needed
-		SCE_AUDIO_OUT_PARAM_FORMAT_S16_STEREO); //This will be changed by decoder if needed
+	if (openBGM) {
+		g_portIdBGM = sceAudioOutOpenPort(
+			SCE_AUDIO_OUT_PORT_TYPE_BGM,
+			256, //This will be changed by decoder if needed
+			48000, //This will be changed by decoder if needed
+			SCE_AUDIO_OUT_PARAM_FORMAT_S16_STEREO); //This will be changed by decoder if needed
+	}
 
 	return result;
 }

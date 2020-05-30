@@ -45,7 +45,7 @@ int vitaSAS_internal_update_thread(unsigned int args, void *argc)
 	result = portId = sceAudioOutOpenPort(
 			work->outputPort,
 			work->numGrain,
-			48000,
+			work->outputSamplingRate,
 			SCE_AUDIO_OUT_PARAM_FORMAT_S16_STEREO);
 	if (result < 0) {
 		goto abort;
@@ -92,7 +92,7 @@ abort:
 	return sceKernelExitDeleteThread(0);
 }
 
-int vitaSAS_internal_audio_out_start(AudioOutWork *work, unsigned int outputPort, unsigned int numGrain, 
+int vitaSAS_internal_audio_out_start(AudioOutWork *work, unsigned int outputPort, unsigned int outputSamplingRate, unsigned int numGrain,
 	AudioOutRenderHandler renderHandler, unsigned int thPriority, unsigned int thStackSize, unsigned int thCpu)
 {
 	int result;
@@ -118,6 +118,7 @@ int vitaSAS_internal_audio_out_start(AudioOutWork *work, unsigned int outputPort
 
 	work->outputPort = outputPort;
 	work->numGrain = numGrain;
+	work->outputSamplingRate = outputSamplingRate;
 	work->renderHandler = renderHandler;
 
 	/* Create update thread */
