@@ -10,9 +10,6 @@
 #include "fios2ac.h"
 #include "vitaSAS.h"
 
-extern void* sceClibMspaceMalloc(void* space, unsigned int size);
-extern void sceClibMspaceFree(void* space, void* ptr);
-
 static AudioOutWork s_audioOut;
 
 void* mspace_internal;
