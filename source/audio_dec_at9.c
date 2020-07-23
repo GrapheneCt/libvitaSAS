@@ -1,13 +1,10 @@
 #include <psp2/kernel/threadmgr.h> 
 #include <psp2/kernel/clib.h>
 #include <psp2/audiodec.h> 
+#include <psp2/libdbg.h> 
 
-#include <audio_dec.h>
-#include <vitaSAS.h>
-
-extern void* sceClibMspaceMalloc(void* space, unsigned int size);
-extern void sceClibMspaceFree(void* space, void* ptr);
-extern void* sceClibMspaceMemalign(void* space, uint32_t alignment, uint32_t size);
+#include "audio_dec.h"
+#include "vitaSAS.h"
 
 extern void* mspace_internal;
 extern unsigned int g_portIdBGM;
@@ -135,12 +132,20 @@ int vitaSAS_internal_parseRiffWaveHeaderForAt9(At9Header *pHeader, const uint8_t
 
 VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath, unsigned int useMainMem)
 {
+	int ret = 0;
+
 	VitaSAS_Decoder* decoderInfo = sceClibMspaceMalloc(mspace_internal, sizeof(VitaSAS_Decoder));
 
 	FileStream* pInput = sceClibMspaceMalloc(mspace_internal, sizeof(FileStream));
 	FileStream* pOutput = sceClibMspaceMalloc(mspace_internal, sizeof(FileStream));
 	SceAudiodecCtrl* pAudiodecCtrl = sceClibMspaceMalloc(mspace_internal, sizeof(SceAudiodecCtrl));
 	SceAudiodecInfo* pAudiodecInfo = sceClibMspaceMalloc(mspace_internal, sizeof(SceAudiodecInfo));
+
+	if (decoderInfo == NULL || pInput == NULL || pOutput == NULL || pAudiodecCtrl == NULL || pAudiodecInfo == NULL) {
+		SCE_DBG_LOG_ERROR("[DEC] sceClibMspaceMalloc() returned NULL");
+		goto failed;
+	}
+
 	AudioOut audioOut;
 
 	decoderInfo->pInput = pInput;
@@ -171,20 +176,37 @@ VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath, unsigned int 
 	pAudiodecCtrl->size = sizeof(SceAudiodecCtrl);
 	pAudiodecCtrl->wordLength = SCE_AUDIODEC_WORD_LENGTH_16BITS;
 
-	vitaSAS_internal_getFileSize(pInput->file.pName, &pInput->file.size);
+	ret = vitaSAS_internal_getFileSize(pInput->file.pName, &pInput->file.size);
+	if (ret < 0) {
+		SCE_DBG_LOG_ERROR("[DEC] vitaSAS_internal_getFileSize(): 0x%X", ret);
+		goto failed;
+	}
 
 	pInput->buf.size = SCE_AUDIODEC_ROUND_UP(pInput->file.size + SCE_AUDIODEC_AT9_MAX_ES_SIZE);
 
 	/* Allocate an input buffer */
 
 	pInput->buf.p = sceClibMspaceMemalign(mspace_internal, SCE_AUDIODEC_ALIGNMENT_SIZE, pInput->buf.size);
+	if (pInput->buf.p == NULL) {
+		SCE_DBG_LOG_ERROR("[DEC] sceClibMspaceMemalign() returned NULL");
+		goto failed;
+	}
 
 	/* Read whole of an input file */
 
-	vitaSAS_internal_readFile(pInput->file.pName, pInput->buf.p, pInput->file.size);
+	ret = vitaSAS_internal_readFile(pInput->file.pName, pInput->buf.p, pInput->file.size);
+	if (ret < 0) {
+		SCE_DBG_LOG_ERROR("[DEC] vitaSAS_internal_readFile(): 0x%X", ret);
+		goto failed;
+	}
+
 	pInput->buf.offsetW = pInput->file.size;
 
 	headerSize = vitaSAS_internal_parseRiffWaveHeaderForAt9(&header, pInput->buf.p, pInput->buf.size);
+	if (headerSize < 0) {
+		SCE_DBG_LOG_ERROR("[DEC] vitaSAS_internal_parseRiffWaveHeaderForAt9(): 0x%X", headerSize);
+		goto failed;
+	}
 
 	pAudiodecCtrl->pInfo->size = sizeof(pAudiodecCtrl->pInfo->at9);
 	sceClibMemcpy(pAudiodecCtrl->pInfo->at9.configData, header.fmtChunk.configData, sizeof(pAudiodecCtrl->pInfo->at9.configData));
@@ -194,11 +216,20 @@ VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath, unsigned int 
 	/* Allocate codec engine memory for decoder */
 
 	CodecEngineMemBlock* codecMemBlock = vitaSAS_internal_allocate_memory_for_codec_engine(SCE_AUDIODEC_TYPE_AT9, pAudiodecCtrl, useMainMem);
+	if (codecMemBlock == NULL) {
+		SCE_DBG_LOG_ERROR("[DEC] vitaSAS_internal_allocate_memory_for_codec_engine() returned NULL");
+		goto failed;
+	}
+
 	decoderInfo->codecMemBlock = codecMemBlock;
 
 	/* Create a decoder */
 
-	sceAudiodecCreateDecoderExternal(pAudiodecCtrl, SCE_AUDIODEC_TYPE_AT9, codecMemBlock->vaContext, codecMemBlock->contextSize);
+	ret = sceAudiodecCreateDecoderExternal(pAudiodecCtrl, SCE_AUDIODEC_TYPE_AT9, codecMemBlock->vaContext, codecMemBlock->contextSize);
+	if (ret < 0) {
+		SCE_DBG_LOG_ERROR("[DEC] sceAudiodecCreateDecoderExternal(): 0x%X", ret);
+		goto failed;
+	}
 
 	audioOut.grain = pAudiodecCtrl->maxPcmSize / pAudiodecCtrl->pInfo->at9.ch / sizeof(int16_t);
 	audioOut.samplingRate = pAudiodecCtrl->pInfo->at9.samplingRate;
@@ -214,6 +245,7 @@ VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath, unsigned int 
 	default:
 		audioOut.param = 0;
 		audioOut.ch = 0;
+		SCE_DBG_LOG_WARNING("[DEC] Invalid channel information");
 		break;
 	}
 
@@ -225,14 +257,50 @@ VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath, unsigned int 
 	/* Allocate output buffers */
 
 	pOutput->buf.op[0] = sceClibMspaceMemalign(mspace_internal, SCE_AUDIODEC_ALIGNMENT_SIZE, pOutput->buf.size);
+	if (pOutput->buf.op[0] == NULL) {
+		SCE_DBG_LOG_ERROR("[DEC] sceClibMspaceMemalign() returned NULL");
+		goto failed;
+	}
+
 	pOutput->buf.op[1] = sceClibMspaceMemalign(mspace_internal, SCE_AUDIODEC_ALIGNMENT_SIZE, pOutput->buf.size);
+	if (pOutput->buf.op[1] == NULL) {
+		SCE_DBG_LOG_ERROR("[DEC] sceClibMspaceMemalign() returned NULL");
+		goto failed;
+	}
 
 	/* Set BGM port config */
 
-	sceAudioOutSetConfig(g_portIdBGM, audioOut.grain, 
+	ret = sceAudioOutSetConfig(g_portIdBGM, audioOut.grain, 
 		audioOut.samplingRate, audioOut.param);
+	if (ret < 0) {
+		SCE_DBG_LOG_ERROR("[DEC] sceAudioOutSetConfig(): 0x%X", ret);
+		goto failed;
+	}
 
 	return decoderInfo;
+
+failed:
+
+	if (decoderInfo != NULL)
+		sceClibMspaceFree(mspace_internal, decoderInfo);
+	if (pInput != NULL)
+		sceClibMspaceFree(mspace_internal, pInput);
+	if (pOutput != NULL)
+		sceClibMspaceFree(mspace_internal, pOutput);
+	if (pAudiodecCtrl != NULL)
+		sceClibMspaceFree(mspace_internal, pAudiodecCtrl);
+	if (pAudiodecInfo != NULL)
+		sceClibMspaceFree(mspace_internal, pAudiodecInfo);
+	if (pInput->buf.p != NULL)
+		sceClibMspaceFree(mspace_internal, pInput->buf.p);
+	if (pOutput->buf.op[0] != NULL)
+		sceClibMspaceFree(mspace_internal, pOutput->buf.op[0]);
+	if (pOutput->buf.op[1] != NULL)
+		sceClibMspaceFree(mspace_internal, pOutput->buf.op[1]);
+	if (decoderInfo->codecMemBlock != NULL)
+		vitaSAS_internal_free_memory_for_codec_engine(decoderInfo->codecMemBlock);
+
+	return NULL;
 }
 
 

@@ -1,15 +1,12 @@
 ﻿#include <arm_neon.h>
 #include <psp2/codecengine.h> 
 #include <psp2/kernel/clib.h> 
-#include <psp2/io/fcntl.h> 
+#include <psp2/kernel/iofilemgr.h> 
+#include <psp2/libdbg.h> 
 #include <psp2/kernel/sysmem.h> 
 #include <psp2/kernel/threadmgr.h> 
 
-#include "audio_out.h"
 #include "vitaSAS.h"
-
-extern void sceClibMspaceFree(void* space, void* ptr);
-extern void* sceClibMspaceMalloc(void* space, unsigned int size);
 
 extern void* mspace_internal;
 extern unsigned int g_portIdBGM;
@@ -27,76 +24,37 @@ void vitaSAS_separate_channels_PCM(short* pBufL, short* pBufR, short* pBufSrc, u
 
 int vitaSAS_internal_getFileSize(const char *pInputFileName, uint32_t *pInputFileSize)
 {
-	int res = 0;
-	int resTmp;
+	int ret = 0;
 
-	SceUID uidFd = -1;
+	SceIoStat stat;
+	ret = sceIoGetstat(pInputFileName, &stat);
 
-	/* Set initial value */
+	*pInputFileSize = (uint32_t)stat.st_size;
 
-	*pInputFileSize = 0;
-
-	/* Open an input file */
-
-	res = sceIoOpen(pInputFileName, SCE_O_RDONLY, 0);
-	uidFd = res;
-	res = 0;
-
-	/* Get the file size */
-	
-	res = sceIoLseek(uidFd, 0, SCE_SEEK_END);
-	*pInputFileSize = res;
-	res = 0;
-
-	if (0 <= uidFd) {
-
-		/* Close an input file */
-
-		resTmp = sceIoClose(uidFd);
-		if (resTmp < 0) {
-			res = resTmp;
-		}
-	}
-
-	return res;
+	return ret;
 }
 
 int vitaSAS_internal_readFile(const char *pInputFileName, void *pInputBuf, uint32_t inputFileSize)
 {
-	int res = 0;
-	int resTmp;
+	int ret = 0;
 
 	SceUID uidFd = -1;
 
 	/* Open an input file */
 
-	res = sceIoOpen(pInputFileName, SCE_O_RDONLY, 0);
-	uidFd = res;
-	res = 0;
+	uidFd = sceIoOpen(pInputFileName, SCE_O_RDONLY, 0);
+	if (uidFd < 0)
+		return uidFd;
 
 	/* Read an input file */
 
-	do {
-		res = sceIoRead(uidFd, pInputBuf, inputFileSize);
-		if (res < 0) {
-			res = -1;
-		}
-		pInputBuf = (uint8_t *)pInputBuf + res;
-		inputFileSize -= res;
-	} while (0 < inputFileSize);
-	res = 0;
+	ret = sceIoRead(uidFd, pInputBuf, inputFileSize);
+	if (ret < 0)
+		return ret;
 
-	if (0 <= uidFd) {
+	ret = sceIoClose(uidFd);
 
-		/* Close an input file */
-
-		resTmp = sceIoClose(uidFd);
-		if (resTmp < 0) {
-			res = resTmp;
-		}
-	}
-
-	return res;
+	return ret;
 }
 
 void vitaSAS_internal_decode_to_buffer(SceAudiodecCtrl *pCtrl, Buffer *pInput, Buffer *pOutput)
@@ -315,6 +273,7 @@ CodecEngineMemBlock* vitaSAS_internal_allocate_memory_for_codec_engine(unsigned 
 	return codecMemBlock;
 
 error:
+
 	sceCodecEngineFreeMemoryFromUnmapMemBlock(uidUnmap, vaContext);
 	sceCodecEngineCloseUnmapMemBlock(uidUnmap);
 	sceKernelFreeMemBlock(uidMemBlock);

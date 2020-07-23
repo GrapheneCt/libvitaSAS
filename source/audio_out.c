@@ -1,13 +1,9 @@
 ﻿#include <psp2/audioout.h> 
+#include <psp2/libdbg.h> 
 #include <psp2/kernel/clib.h> 
 #include <psp2/kernel/threadmgr.h> 
 
-#include "audio_out.h"
 #include "vitaSAS.h"
-
-#define CHANNEL_MAX					2
-#define BUFFER_MAX					2
-#define GRAIN_MAX					1024
 
 extern unsigned int g_portIdBGM;
 
@@ -36,7 +32,7 @@ int vitaSAS_internal_update_thread(unsigned int args, void *argc)
 	AudioOutWork *work;
 	unsigned int bufferId;
 	int result, aVolume[CHANNEL_MAX], portId;
-	short aBuffer[BUFFER_MAX][GRAIN_MAX];
+	short aBuffer[BUFFER_MAX][VITASAS_GRAIN_MAX];
 
 	work = *(AudioOutWork**)argc;
 
@@ -48,8 +44,11 @@ int vitaSAS_internal_update_thread(unsigned int args, void *argc)
 			work->outputSamplingRate,
 			SCE_AUDIO_OUT_PARAM_FORMAT_S16_STEREO);
 	if (result < 0) {
+		SCE_DBG_LOG_ERROR("[SAS] sceAudioOutOpenPort(): 0x%X", result);
 		goto abort;
 	}
+
+	work->portId = portId;
 
 	/* Set volume */
 
@@ -65,7 +64,7 @@ int vitaSAS_internal_update_thread(unsigned int args, void *argc)
 	{
 		/* Call rendering handler */
 
-		(*work->renderHandler)(aBuffer[bufferId]);
+		(*work->renderHandler)(aBuffer[bufferId], work->systemNum);
 
 		/* Output audio */
 
@@ -89,37 +88,14 @@ abort:
 
 	result = sceAudioOutReleasePort(portId);
 
+	SCE_DBG_LOG_DEBUG("[SAS] SAS sytem audio output has been aborted");
+
 	return sceKernelExitDeleteThread(0);
 }
 
-int vitaSAS_internal_audio_out_start(AudioOutWork *work, unsigned int outputPort, unsigned int outputSamplingRate, unsigned int numGrain,
-	AudioOutRenderHandler renderHandler, unsigned int thPriority, unsigned int thStackSize, unsigned int thCpu)
+int vitaSAS_internal_audio_out_start(AudioOutWork *work, unsigned int thPriority, unsigned int thStackSize, unsigned int thCpu)
 {
 	int result;
-
-	/* Clear work */
-
-	sceClibMemset(work, 0, sizeof(*work));
-
-	/* Check input parameters */
-
-	if (outputPort != SCE_AUDIO_OUT_PORT_TYPE_MAIN
-	 && outputPort != SCE_AUDIO_OUT_PORT_TYPE_BGM) {
-		return -1;
-	}
-
-	if (GRAIN_MAX < numGrain) {
-		return -1;
-	}
-
-	if (renderHandler == NULL) {
-		return -1;
-	}
-
-	work->outputPort = outputPort;
-	work->numGrain = numGrain;
-	work->outputSamplingRate = outputSamplingRate;
-	work->renderHandler = renderHandler;
 
 	/* Create update thread */
 
@@ -132,6 +108,7 @@ int vitaSAS_internal_audio_out_start(AudioOutWork *work, unsigned int outputPort
 			thCpu,
 			NULL);
 	if (result < 0) {
+		SCE_DBG_LOG_ERROR("[SAS] sceKernelCreateThread(): 0x%X", result);
 		goto failed;
 	}
 
@@ -139,6 +116,7 @@ int vitaSAS_internal_audio_out_start(AudioOutWork *work, unsigned int outputPort
 
 	result = sceKernelStartThread(work->updateThreadId, sizeof(work), &work);
 	if (result < 0) {
+		SCE_DBG_LOG_ERROR("[SAS] sceKernelStartThread(): 0x%X", result);
 		goto failed;
 	}
 
