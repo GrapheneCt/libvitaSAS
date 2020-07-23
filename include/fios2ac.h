@@ -34,5 +34,6 @@ SceInt32 sceFiosFHOpenSync(const ScePVoid attr, SceFiosFH* fh, const SceName pat
 SceFiosSize sceFiosFHReadSync(const ScePVoid attr, SceFiosFH fh, ScePVoid data, SceFiosSize size);
 SceInt32 sceFiosFHCloseSync(const ScePVoid attr, SceFiosFH fh);
 SceFiosOffset sceFiosFHSeek(SceFiosFH fh, SceFiosOffset offset, SceFiosWhence whence);
+SceFiosSize sceFiosFHPreadSync(const ScePVoid attr, SceFiosFH fh, ScePVoid data, SceFiosSize length, SceFiosOffset offset);
 
 #endif
