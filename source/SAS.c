@@ -19,6 +19,108 @@ static SceUID SASSystemFlagUID = 0;
 static int SASCurrentSystemNum = 0;
 static vitaSASSystem* SASSystemStorage[MAX_SAS_SYSTEM_NUM];
 
+static void* vitaSAS_internal_search_WAV_header(int dataToSearch, void* ptr, int* bytesMoved)
+{
+	int bytesMovedCount = 0;
+	void* new_ptr = ptr;
+	while (*(int *)new_ptr != dataToSearch) {
+		new_ptr++;
+		bytesMovedCount++;
+	}
+
+	*bytesMoved = bytesMovedCount;
+
+	return new_ptr;
+}
+
+static void vitaSAS_internal_load_audio_WAV_FIOS2(char *mountedFilePath, size_t *outSize, SceUID* mem_id_ret, void** datap)
+{
+	void *data, *header;
+	SceUID mem_id;
+	SceFiosFH file;
+	SceFiosSize size;
+	int result, offset, headerSize;
+	unsigned int mem_size;
+	mem_id = 0;
+
+	file = 0;
+	data = NULL;
+	header = NULL;
+
+	result = sceFiosFHOpenSync(NULL, &file, mountedFilePath, NULL);
+	if (result < 0) {
+		SCE_DBG_LOG_ERROR("[SAS IO] Can't open %s sceFiosFHOpenSync(): 0x%X", mountedFilePath, result);
+		goto failed;
+	}
+
+	header = sceClibMspaceMalloc(mspace_internal, 64);
+
+	result = sceFiosFHReadSync(NULL, file, header, 64);
+	if (result < 0) {
+		SCE_DBG_LOG_ERROR("[SAS IO] Can't read %s sceFiosFHReadSync(): 0x%X", mountedFilePath, result);
+		goto failed;
+	}
+
+	header = vitaSAS_internal_search_WAV_header(0x20746D66, header, &headerSize);
+
+	if (*(short *)(header + 10) > 1) {
+		SCE_DBG_LOG_WARNING("[SAS IO] Only mono files are supported");
+		goto failed;
+	}
+
+	if (*(short *)(header + 22) != 16) {
+		SCE_DBG_LOG_WARNING("[SAS IO] Only 16-bit files are supported");
+		goto failed;
+	}
+
+	int bytesMoved;
+	header = vitaSAS_internal_search_WAV_header(0x61746164, header, &bytesMoved);
+	headerSize += bytesMoved;
+
+	size = *(uint32_t *)(header + 4);
+	offset = headerSize + 8;
+
+	sceClibMspaceFree(mspace_internal, header);
+
+	mem_size = ROUND_UP(size, 4 * 1024);
+	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, mem_size, NULL);
+
+	if (mem_id < 0) {
+		SCE_DBG_LOG_ERROR("[SAS IO] sceKernelAllocMemBlock(): 0x%X", mem_id);
+		goto failed;
+	}
+
+	sceKernelGetMemBlockBase(mem_id, &data);
+
+	result = sceFiosFHPreadSync(NULL, file, data, size, (int64_t)offset);
+	if (result < 0) {
+		SCE_DBG_LOG_ERROR("[SAS IO] Can't read %s sceFiosFHReadSync(): 0x%X", mountedFilePath, result);
+		goto failed;
+	}
+
+	sceFiosFHCloseSync(NULL, file);
+
+	*outSize = (size_t)result;
+	*mem_id_ret = mem_id;
+	*datap = data;
+
+	return;
+
+failed:
+
+	if (header != NULL)
+		sceClibMspaceFree(mspace_internal, header);
+
+	if (mem_id != 0)
+		sceKernelFreeMemBlock(mem_id);
+
+	if (0 < file) {
+		sceFiosFHCloseSync(NULL, file);
+	}
+
+	return;
+}
+
 static void *vitaSAS_internal_load_audio_FIOS2(char *mountedFilePath, size_t *outSize, SceUID* mem_id_ret)
 {
 	void *data;
@@ -145,24 +247,10 @@ failed:
 	return NULL;
 }
 
-static void* vitaSAS_internal_search_WAV_header(int dataToSearch, void* ptr, int* bytesMoved)
-{
-	int bytesMovedCount = 0;
-	void* new_ptr = ptr;
-	while (*(int *)new_ptr != dataToSearch) {
-		new_ptr++;
-		bytesMovedCount++;
-	}
-
-	*bytesMoved = bytesMovedCount;
-
-	return new_ptr;
-}
-
 static void vitaSAS_internal_load_audio_WAV(char *path, size_t *outSize, SceUID* mem_id_ret, void** datap, int io_type)
 {
-	/*if (io_type == 1)
-		return vitaSAS_internal_load_audio_FIOS2(path, outSize, mem_id_ret);*/
+	if (io_type == 1)
+		return vitaSAS_internal_load_audio_WAV_FIOS2(path, outSize, mem_id_ret, datap);
 
 	void *data, *header;
 	SceUID file, mem_id;
