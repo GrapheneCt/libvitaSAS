@@ -371,7 +371,7 @@ int vitaSAS_init(unsigned int openBGM)
 {
 	int SASFlag = 1;
 
-	sceDbgSetMinimumLogLevel(SCE_DBG_LOG_LEVEL_DEBUG);
+	sceDbgSetMinimumLogLevel(SCE_DBG_LOG_LEVEL_ERROR);
 
 	/* Open BGM port for Codec Engine decoders */
 
@@ -406,6 +406,11 @@ void vitaSAS_set_sub_system_vol(unsigned int subSystemMixVolL, unsigned int subS
 void vitaSAS_select_system(int systemNum)
 {
 	SASCurrentSystemNum = systemNum;
+}
+
+SceUID vitaSAS_get_system_handle(void)
+{
+	return SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle;
 }
 
 void vitaSAS_destroy_system(void)
@@ -520,6 +525,10 @@ int vitaSAS_create_system_with_config(const char* sasConfig, VitaSASSystemParam*
 		goto error;
 	}
 
+	/* Create audio out thread pause flag */
+
+	system->audioWork.eventFlagId = sceKernelCreateEventFlag("SASSystemRenderPauseFlag", SCE_KERNEL_ATTR_MULTI, 1, NULL);
+
 	/* Start audioout server */
 
 	if (!system->isSubSystem) {
@@ -543,6 +552,16 @@ error:
 		sceClibMspaceFree(mspace_internal, buffer);
 	sceClibMspaceFree(mspace_internal, system);
 	return -1;
+}
+
+int vitaSAS_pause_system_render(void)
+{
+	return sceKernelClearEventFlag(SASSystemStorage[SASCurrentSystemNum]->audioWork.eventFlagId, ~1);
+}
+
+int vitaSAS_resume_system_render(void)
+{
+	return sceKernelSetEventFlag(SASSystemStorage[SASCurrentSystemNum]->audioWork.eventFlagId, 1);
 }
 
 int vitaSAS_create_system(VitaSASSystemParam* systemInitParam)
@@ -675,13 +694,47 @@ void vitaSAS_set_effect(unsigned int effectType, unsigned int volL, unsigned int
 	sceSasSetEffectTypeInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, effectType);
 	sceSasSetEffectParamInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, delayTime, feedbackLevel);
 	sceSasSetEffectVolumeInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, volL, volR);
-	sceSasSetEffectInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, 0, 1);
 }
 
 void vitaSAS_reset_effect(void)
 {
 	sceSasSetEffectTypeInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, SCE_SAS_FX_TYPE_OFF);
-	sceSasSetEffectInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, 1, 0);
+}
+
+void vitaSAS_set_switch_config(unsigned int drySwitch, unsigned int wetSwitch)
+{
+	sceSasSetEffectInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, drySwitch, wetSwitch);
+}
+
+void vitaSAS_set_pitch(unsigned int voiceID, unsigned int pitch)
+{
+	sceSasSetPitchInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, voiceID, pitch);
+}
+
+void vitaSAS_set_volume(unsigned int voiceID, unsigned int volLDry,
+	unsigned int volRDry, unsigned int volLWet, unsigned int volRWet)
+{
+	sceSasSetVolumeInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, voiceID, volLDry, volRDry, volLWet, volRWet);
+}
+
+void vitaSAS_set_simple_ADSR(unsigned int voiceID, unsigned int adsr1, unsigned int adsr2)
+{
+	sceSasSetSimpleADSRInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, voiceID, adsr1, adsr2);
+}
+
+void vitaSAS_set_SL(unsigned int voiceID, unsigned int sustainLevel)
+{
+	sceSasSetSLInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, voiceID, sustainLevel);
+}
+
+void vitaSAS_set_ADSR_mode(unsigned int voiceID, unsigned int flag, unsigned int a, unsigned int d, unsigned int s, unsigned int r)
+{
+	sceSasSetADSRmodeInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, voiceID, flag, a, d, s, r);
+}
+
+void vitaSAS_set_ADSR(unsigned int voiceID, unsigned int flag, unsigned int a, unsigned int d, unsigned int s, unsigned int r)
+{
+	sceSasSetADSRInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, voiceID, flag, a, d, s, r);
 }
 
 int vitaSAS_set_key_on(unsigned int voiceID)

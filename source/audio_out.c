@@ -6,6 +6,7 @@
 #include "vitaSAS.h"
 
 extern unsigned int g_portIdBGM;
+extern void* mspace_internal;
 
 void vitaSAS_internal_output_for_decoder(Buffer *pOutput)
 {
@@ -32,9 +33,12 @@ int vitaSAS_internal_update_thread(unsigned int args, void *argc)
 	AudioOutWork *work;
 	unsigned int bufferId;
 	int result, aVolume[CHANNEL_MAX], portId;
-	short aBuffer[BUFFER_MAX][VITASAS_GRAIN_MAX];
 
 	work = *(AudioOutWork**)argc;
+
+	short* aBuffer[BUFFER_MAX];
+	aBuffer[0] = sceClibMspaceMalloc(mspace_internal, work->numGrain * 4);
+	aBuffer[1] = sceClibMspaceMalloc(mspace_internal, work->numGrain * 4);
 
 	/* Open audio out port */
 
@@ -62,6 +66,10 @@ int vitaSAS_internal_update_thread(unsigned int args, void *argc)
 
 	while (work->isAborted == 0)
 	{
+		/* Check render pause flag */
+
+		sceKernelWaitEventFlag(work->eventFlagId, 1, SCE_KERNEL_EVF_WAITMODE_AND, NULL, NULL);
+
 		/* Call rendering handler */
 
 		(*work->renderHandler)(aBuffer[bufferId], work->systemNum);
@@ -79,6 +87,11 @@ int vitaSAS_internal_update_thread(unsigned int args, void *argc)
 	}
 
 abort:
+
+	/* Free buffers */
+
+	sceClibMspaceFree(mspace_internal, aBuffer[0]);
+	sceClibMspaceFree(mspace_internal, aBuffer[1]);
 
 	/* Flush buffer */
 
