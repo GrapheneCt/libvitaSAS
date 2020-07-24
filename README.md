@@ -6,7 +6,7 @@ Loading directly from FIOS2 overlay (for example, loading directly from PSARC ar
 
 ## Native SAS playback:
 
-Only HE-ADPCM (.vag) and PCM (.pcm) files are supported.
+Only HE-ADPCM (.vag) and PCM (.pcm, .wav) files are supported.
 
 ## Codec Engine hardware decoding and playback:
 ### Supported input formats (all application modes):
