@@ -1,0 +1,56 @@
+vitaSAS:
+  attributes: 0
+  version:
+    major: 1
+    minor: 1
+  main:
+    start: module_start
+    stop: module_stop
+    exit: module_exit
+  modules:
+    vitaSAS:
+      functions:
+        - vitaSAS_pass_mspace
+        - vitaSAS_init
+        - vitaSAS_finish
+        - vitaSAS_create_system
+        - vitaSAS_create_system_with_config
+        - vitaSAS_destroy_system
+        - vitaSAS_select_system
+        - vitaSAS_pause_system_render
+        - vitaSAS_resume_system_render
+        - vitaSAS_get_system_handle
+        - vitaSAS_set_sub_system_vol
+        - vitaSAS_free_audio
+        - vitaSAS_load_audio_VAG
+        - vitaSAS_load_audio_PCM
+        - vitaSAS_load_audio_WAV
+        - vitaSAS_load_audio_custom
+        - vitaSAS_separate_channels_PCM
+        - vitaSAS_set_key_on
+        - vitaSAS_set_key_off
+        - vitaSAS_get_end_state
+        - vitaSAS_destroy_decoder
+        - vitaSAS_create_AT9_decoder
+        - vitaSAS_create_MP3_decoder
+        - vitaSAS_create_AAC_decoder
+        - vitaSAS_decoder_start_playback
+        - vitaSAS_decoder_pause_playback
+        - vitaSAS_decoder_resume_playback
+        - vitaSAS_decoder_stop_playback
+        - vitaSAS_decoder_seek
+        - vitaSAS_decode_to_buffer
+        - vitaSAS_decoder_get_current_es_offset
+        - vitaSAS_decoder_get_end_state
+        - vitaSAS_set_voice_VAG
+        - vitaSAS_set_voice_PCM
+        - vitaSAS_set_voice_noise
+        - vitaSAS_set_effect
+        - vitaSAS_reset_effect
+        - vitaSAS_set_switch_config
+        - vitaSAS_set_pitch
+        - vitaSAS_set_volume
+        - vitaSAS_set_simple_ADSR
+        - vitaSAS_set_SL
+        - vitaSAS_set_ADSR_mode
+        - vitaSAS_set_ADSR
