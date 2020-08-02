@@ -763,7 +763,7 @@ int module_exit() {
 
 void _start() __attribute__((weak, alias("module_start")));
 int module_start(SceSize argc, void *args) {
-	sceClibPrintf("vitaSAS module start\n");
+	sceClibPrintf("vitaSAS module start, ver. 01.00\n");
 	sceDbgSetMinimumLogLevel(SCE_DBG_LOG_LEVEL_ERROR);
 	return SCE_KERNEL_START_SUCCESS;
 }
