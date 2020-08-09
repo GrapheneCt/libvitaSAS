@@ -371,8 +371,6 @@ int vitaSAS_init(unsigned int openBGM)
 {
 	int SASFlag = 1;
 
-	sceDbgSetMinimumLogLevel(SCE_DBG_LOG_LEVEL_ERROR);
-
 	/* Open BGM port for Codec Engine decoders */
 
 	if (openBGM) {
