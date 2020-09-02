@@ -1,5 +1,5 @@
 TARGET_LIB = libvitaSAS.a
-OBJS       = source/SAS.o source/audio_out.o source/audio_dec_common.o source/audio_dec_at9.o source/audio_dec_mp3.o source/audio_dec_aac.o
+OBJS       = source/SAS.o source/audio_out.o source/audio_dec_common.o source/audio_dec_at9.o source/audio_dec_mp3.o source/audio_dec_aac.o source/heap.o
 INCLUDES   = include
 
 PREFIX  ?= ${DOLCESDK}/arm-dolce-eabi

@@ -5,8 +5,9 @@
 
 #include "audio_dec.h"
 #include "vitaSAS.h"
+#include "heap.h"
 
-extern void* mspace_internal;
+extern void* heap_internal;
 extern unsigned int g_portIdBGM;
 
 int vitaSAS_internal_parseMpegHeader(MpegHeader *pHeader, const uint8_t * pBuf, unsigned int bufSize)
@@ -70,15 +71,15 @@ VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath)
 {
 	int ret = 0;
 
-	VitaSAS_Decoder* decoderInfo = sceClibMspaceMalloc(mspace_internal, sizeof(VitaSAS_Decoder));
+	VitaSAS_Decoder* decoderInfo = heap_alloc_heap_memory(heap_internal, sizeof(VitaSAS_Decoder));
 
-	FileStream* pInput = sceClibMspaceMalloc(mspace_internal, sizeof(FileStream));
-	FileStream* pOutput = sceClibMspaceMalloc(mspace_internal, sizeof(FileStream));
-	SceAudiodecCtrl* pAudiodecCtrl = sceClibMspaceMalloc(mspace_internal, sizeof(SceAudiodecCtrl));
-	SceAudiodecInfo* pAudiodecInfo = sceClibMspaceMalloc(mspace_internal, sizeof(SceAudiodecInfo));
+	FileStream* pInput = heap_alloc_heap_memory(heap_internal, sizeof(FileStream));
+	FileStream* pOutput = heap_alloc_heap_memory(heap_internal, sizeof(FileStream));
+	SceAudiodecCtrl* pAudiodecCtrl = heap_alloc_heap_memory(heap_internal, sizeof(SceAudiodecCtrl));
+	SceAudiodecInfo* pAudiodecInfo = heap_alloc_heap_memory(heap_internal, sizeof(SceAudiodecInfo));
 
 	if (decoderInfo == NULL || pInput == NULL || pOutput == NULL || pAudiodecCtrl == NULL || pAudiodecInfo == NULL) {
-		SCE_DBG_LOG_ERROR("[DEC] sceClibMspaceMalloc() returned NULL");
+		SCE_DBG_LOG_ERROR("[DEC] heap_alloc_heap_memory() returned NULL");
 		goto failed;
 	}
 
@@ -121,7 +122,10 @@ VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath)
 
 	/* Allocate an input buffer */
 
-	pInput->buf.p = sceClibMspaceMemalign(mspace_internal, SCE_AUDIODEC_ALIGNMENT_SIZE, pInput->buf.size);
+	heap_alloc_opt_param param;
+	param.size = sizeof(heap_alloc_opt_param);
+	param.alignment = SCE_AUDIODEC_ALIGNMENT_SIZE;
+	pInput->buf.p = heap_alloc_heap_memory_with_option(heap_internal, pInput->buf.size, &param);
 	if (pInput->buf.p == NULL) {
 		SCE_DBG_LOG_ERROR("[DEC] sceClibMspaceMemalign() returned NULL");
 		goto failed;
@@ -197,15 +201,15 @@ VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath)
 
 	/* Allocate output buffers */
 
-	pOutput->buf.op[0] = sceClibMspaceMemalign(mspace_internal, SCE_AUDIODEC_ALIGNMENT_SIZE, pOutput->buf.size);
+	pOutput->buf.op[0] = heap_alloc_heap_memory_with_option(heap_internal, pOutput->buf.size, &param);
 	if (pOutput->buf.op[0] == NULL) {
-		SCE_DBG_LOG_ERROR("[DEC] sceClibMspaceMemalign() returned NULL");
+		SCE_DBG_LOG_ERROR("[DEC] heap_alloc_heap_memory_with_option() returned NULL");
 		goto failed;
 	}
 
-	pOutput->buf.op[1] = sceClibMspaceMemalign(mspace_internal, SCE_AUDIODEC_ALIGNMENT_SIZE, pOutput->buf.size);
+	pOutput->buf.op[1] = heap_alloc_heap_memory_with_option(heap_internal, pOutput->buf.size, &param);
 	if (pOutput->buf.op[1] == NULL) {
-		SCE_DBG_LOG_ERROR("[DEC] sceClibMspaceMemalign() returned NULL");
+		SCE_DBG_LOG_ERROR("[DEC] heap_alloc_heap_memory_with_option() returned NULL");
 		goto failed;
 	}
 
@@ -223,21 +227,21 @@ VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath)
 failed:
 
 	if (decoderInfo != NULL)
-		sceClibMspaceFree(mspace_internal, decoderInfo);
+		heap_free_heap_memory(heap_internal, decoderInfo);
 	if (pInput != NULL)
-		sceClibMspaceFree(mspace_internal, pInput);
+		heap_free_heap_memory(heap_internal, pInput);
 	if (pOutput != NULL)
-		sceClibMspaceFree(mspace_internal, pOutput);
+		heap_free_heap_memory(heap_internal, pOutput);
 	if (pAudiodecCtrl != NULL)
-		sceClibMspaceFree(mspace_internal, pAudiodecCtrl);
+		heap_free_heap_memory(heap_internal, pAudiodecCtrl);
 	if (pAudiodecInfo != NULL)
-		sceClibMspaceFree(mspace_internal, pAudiodecInfo);
+		heap_free_heap_memory(heap_internal, pAudiodecInfo);
 	if (pInput->buf.p != NULL)
-		sceClibMspaceFree(mspace_internal, pInput->buf.p);
+		heap_free_heap_memory(heap_internal, pInput->buf.p);
 	if (pOutput->buf.op[0] != NULL)
-		sceClibMspaceFree(mspace_internal, pOutput->buf.op[0]);
+		heap_free_heap_memory(heap_internal, pOutput->buf.op[0]);
 	if (pOutput->buf.op[1] != NULL)
-		sceClibMspaceFree(mspace_internal, pOutput->buf.op[1]);
+		heap_free_heap_memory(heap_internal, pOutput->buf.op[1]);
 
 	return NULL;
 }

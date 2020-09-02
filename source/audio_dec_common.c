@@ -7,8 +7,9 @@
 #include <psp2/kernel/threadmgr.h> 
 
 #include "vitaSAS.h"
+#include "heap.h"
 
-extern void* mspace_internal;
+extern void* heap_internal;
 extern unsigned int g_portIdBGM;
 
 void vitaSAS_separate_channels_PCM(short* pBufL, short* pBufR, short* pBufSrc, unsigned int bufSrcSize)
@@ -209,7 +210,7 @@ void vitaSAS_internal_free_memory_for_codec_engine(const CodecEngineMemBlock* co
 
 CodecEngineMemBlock* vitaSAS_internal_allocate_memory_for_codec_engine(unsigned int codecType, SceAudiodecCtrl* addecctrl, unsigned int useMainMem)
 {
-	CodecEngineMemBlock* codecMemBlock = sceClibMspaceMalloc(mspace_internal, sizeof(CodecEngineMemBlock));
+	CodecEngineMemBlock* codecMemBlock = heap_alloc_heap_memory(heap_internal, sizeof(CodecEngineMemBlock));
 
 	SceUID uidMemBlock, uidUnmap;
 	uidMemBlock = 0;
@@ -283,8 +284,8 @@ error:
 
 void vitaSAS_destroy_decoder(VitaSAS_Decoder* decoderInfo)
 {
-	sceClibMspaceFree(mspace_internal, decoderInfo->pOutput->buf.op[0]);
-	sceClibMspaceFree(mspace_internal, decoderInfo->pOutput->buf.op[1]);
+	heap_free_heap_memory(heap_internal, decoderInfo->pOutput->buf.op[0]);
+	heap_free_heap_memory(heap_internal, decoderInfo->pOutput->buf.op[1]);
 	if (decoderInfo->pAudiodecCtrl->pInfo->size != sizeof(decoderInfo->pAudiodecCtrl->pInfo->mp3)) {
 		sceAudiodecDeleteDecoderExternal(decoderInfo->pAudiodecCtrl, &decoderInfo->codecMemBlock->vaContext);
 		vitaSAS_internal_free_memory_for_codec_engine(decoderInfo->codecMemBlock);
@@ -293,11 +294,11 @@ void vitaSAS_destroy_decoder(VitaSAS_Decoder* decoderInfo)
 		sceAudiodecDeleteDecoder(decoderInfo->pAudiodecCtrl);
 		sceAudiodecTermLibrary(SCE_AUDIODEC_TYPE_MP3);
 	}
-	sceClibMspaceFree(mspace_internal, decoderInfo->codecMemBlock);
-	sceClibMspaceFree(mspace_internal, decoderInfo->pInput->buf.p);
-	sceClibMspaceFree(mspace_internal, decoderInfo->pAudiodecInfo);
-	sceClibMspaceFree(mspace_internal, decoderInfo->pAudiodecCtrl);
-	sceClibMspaceFree(mspace_internal, decoderInfo->pOutput);
-	sceClibMspaceFree(mspace_internal, decoderInfo->pInput);
-	sceClibMspaceFree(mspace_internal, decoderInfo);
+	heap_free_heap_memory(heap_internal, decoderInfo->codecMemBlock);
+	heap_free_heap_memory(heap_internal, decoderInfo->pInput->buf.p);
+	heap_free_heap_memory(heap_internal, decoderInfo->pAudiodecInfo);
+	heap_free_heap_memory(heap_internal, decoderInfo->pAudiodecCtrl);
+	heap_free_heap_memory(heap_internal, decoderInfo->pOutput);
+	heap_free_heap_memory(heap_internal, decoderInfo->pInput);
+	heap_free_heap_memory(heap_internal, decoderInfo);
 }

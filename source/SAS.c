@@ -6,18 +6,21 @@
 #include <psp2/sysmodule.h>
 #include <psp2/libdbg.h>
 #include <psp2/sas.h>
+#include <psp2/fios2.h>
 
-#include "fios2ac.h"
 #include "vitaSAS.h"
+#include "heap.h"
 
 static int SASSystenEVF[MAX_SAS_SYSTEM_NUM];
 
-void* mspace_internal;
+void* heap_internal;
 int g_portIdBGM = 0;
 
 static SceUID SASSystemFlagUID = 0;
 static int SASCurrentSystemNum = 0;
 static vitaSASSystem* SASSystemStorage[MAX_SAS_SYSTEM_NUM];
+
+static unsigned int heap_size = DEFAULT_HEAP_SIZE;
 
 static void* vitaSAS_internal_search_WAV_header(int dataToSearch, void* ptr, int* bytesMoved)
 {
@@ -53,7 +56,7 @@ static void vitaSAS_internal_load_audio_WAV_FIOS2(char *mountedFilePath, size_t 
 		goto failed;
 	}
 
-	header = sceClibMspaceMalloc(mspace_internal, 64);
+	header = heap_alloc_heap_memory(heap_internal, 64);
 
 	result = sceFiosFHReadSync(NULL, file, header, 64);
 	if (result < 0) {
@@ -80,10 +83,10 @@ static void vitaSAS_internal_load_audio_WAV_FIOS2(char *mountedFilePath, size_t 
 	size = *(uint32_t *)(header + 4);
 	offset = headerSize + 8;
 
-	sceClibMspaceFree(mspace_internal, header);
+	heap_free_heap_memory(heap_internal, header);
 
 	mem_size = ROUND_UP(size, 4 * 1024);
-	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, mem_size, NULL);
+	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, mem_size, NULL);
 
 	if (mem_id < 0) {
 		SCE_DBG_LOG_ERROR("[SAS IO] sceKernelAllocMemBlock(): 0x%X", mem_id);
@@ -109,7 +112,7 @@ static void vitaSAS_internal_load_audio_WAV_FIOS2(char *mountedFilePath, size_t 
 failed:
 
 	if (header != NULL)
-		sceClibMspaceFree(mspace_internal, header);
+		heap_free_heap_memory(heap_internal, header);
 
 	if (mem_id != 0)
 		sceKernelFreeMemBlock(mem_id);
@@ -150,7 +153,7 @@ static void *vitaSAS_internal_load_audio_FIOS2(char *mountedFilePath, size_t *ou
 	}
 
 	mem_size = ROUND_UP(size, 4 * 1024);
-	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, mem_size, NULL);
+	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, mem_size, NULL);
 
 	if (mem_id < 0) {
 		SCE_DBG_LOG_ERROR("[SAS IO] sceKernelAllocMemBlock(): 0x%X", mem_id);
@@ -214,7 +217,7 @@ static void *vitaSAS_internal_load_audio(char *path, size_t *outSize, SceUID* me
 	}
 
 	mem_size = ROUND_UP(size, 4 * 1024);
-	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, mem_size, NULL);
+	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, mem_size, NULL);
 
 	if (mem_id < 0) {
 		SCE_DBG_LOG_ERROR("[SAS IO] sceKernelAllocMemBlock(): 0x%X", mem_id);
@@ -268,7 +271,7 @@ static void vitaSAS_internal_load_audio_WAV(char *path, size_t *outSize, SceUID*
 		goto failed;
 	}
 
-	header = sceClibMspaceMalloc(mspace_internal, 64);
+	header = heap_alloc_heap_memory(heap_internal, 64);
 
 	result = sceIoRead(file, header, 64);
 	if (result < 0) {
@@ -295,10 +298,10 @@ static void vitaSAS_internal_load_audio_WAV(char *path, size_t *outSize, SceUID*
 	size = *(uint32_t *)(header + 4);
 	offset = headerSize + 8;
 
-	sceClibMspaceFree(mspace_internal, header);
+	heap_free_heap_memory(heap_internal, header);
 
 	mem_size = ROUND_UP(size, 4 * 1024);
-	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, mem_size, NULL);
+	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, mem_size, NULL);
 
 	if (mem_id < 0) {
 		SCE_DBG_LOG_ERROR("[SAS IO] sceKernelAllocMemBlock(): 0x%X", mem_id);
@@ -324,7 +327,7 @@ static void vitaSAS_internal_load_audio_WAV(char *path, size_t *outSize, SceUID*
 failed:
 
 	if (header != NULL)
-		sceClibMspaceFree(mspace_internal, header);
+		heap_free_heap_memory(heap_internal, header);
 
 	if (mem_id != 0)
 		sceKernelFreeMemBlock(mem_id);
@@ -345,14 +348,18 @@ int vitaSAS_finish(void)
 	if (g_portIdBGM > 0)
 		sceAudioOutReleasePort(g_portIdBGM);
 
+	/* Delete heap */
+
+	heap_delete_heap(heap_internal);
+
 	/* Unload the SAS module */
 
 	return sceSysmoduleUnloadModule(SCE_SYSMODULE_SAS);
 }
 
-void vitaSAS_pass_mspace(void* mspace)
+void vitaSAS_set_heap_size(unsigned int size)
 {
-	mspace_internal = mspace;
+	heap_size = size;
 }
 
 void vitaSAS_internal_update(void* buffer, int SASSystemNum)
@@ -370,6 +377,10 @@ void vitaSAS_internal_update(void* buffer, int SASSystemNum)
 int vitaSAS_init(unsigned int openBGM)
 {
 	int SASFlag = 1;
+
+	/* Initialize heap */
+
+	heap_internal = heap_create_heap("vitaSAS_heap", heap_size, HEAP_AUTO_EXTEND, NULL);
 
 	/* Open BGM port for Codec Engine decoders */
 
@@ -425,8 +436,8 @@ void vitaSAS_destroy_system(void)
 
 	sceSasExitInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, &buffer, &bufferSize);
 
-	sceClibMspaceFree(mspace_internal, buffer);
-	sceClibMspaceFree(mspace_internal, SASSystemStorage[SASCurrentSystemNum]);
+	heap_free_heap_memory(heap_internal, buffer);
+	heap_free_heap_memory(heap_internal, SASSystemStorage[SASCurrentSystemNum]);
 
 	/* Unregister SAS system position */
 
@@ -454,9 +465,9 @@ int vitaSAS_create_system_with_config(const char* sasConfig, VitaSASSystemParam*
 
 	/* Create SAS system instance */
 
-	vitaSASSystem* system = sceClibMspaceMalloc(mspace_internal, sizeof(vitaSASSystem));
+	vitaSASSystem* system = heap_alloc_heap_memory(heap_internal, sizeof(vitaSASSystem));
 	if (system == NULL) {
-		SCE_DBG_LOG_ERROR("[SAS] sceClibMspaceMalloc() returned NULL");
+		SCE_DBG_LOG_ERROR("[SAS] heap_alloc_heap_memory() returned NULL");
 		return -1;
 	}
 
@@ -505,9 +516,9 @@ int vitaSAS_create_system_with_config(const char* sasConfig, VitaSASSystemParam*
 
 	SCE_DBG_LOG_DEBUG("[SAS] SAS system requested: %f MB", (float)bufferSize / 1024.0f / 1024.0f);
 
-	buffer = sceClibMspaceMalloc(mspace_internal, bufferSize);
+	buffer = heap_alloc_heap_memory(heap_internal, bufferSize);
 	if (buffer == NULL) {
-		SCE_DBG_LOG_ERROR("[SAS] sceClibMspaceMalloc() returned NULL");
+		SCE_DBG_LOG_ERROR("[SAS] heap_alloc_heap_memory() returned NULL");
 		goto error;
 	}
 
@@ -547,8 +558,8 @@ int vitaSAS_create_system_with_config(const char* sasConfig, VitaSASSystemParam*
 error:
 
 	if (buffer != NULL)
-		sceClibMspaceFree(mspace_internal, buffer);
-	sceClibMspaceFree(mspace_internal, system);
+		heap_free_heap_memory(heap_internal, buffer);
+	heap_free_heap_memory(heap_internal, system);
 	return -1;
 }
 
@@ -569,15 +580,16 @@ int vitaSAS_create_system(VitaSASSystemParam* systemInitParam)
 
 void vitaSAS_free_audio(vitaSASAudio* info)
 {
-	sceKernelFreeMemBlock(info->data_id);
-	sceClibMspaceFree(mspace_internal, info);
+	if (info->data_id)
+		sceKernelFreeMemBlock(info->data_id);
+	heap_free_heap_memory(heap_internal, info);
 }
 
 vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize)
 {
-	vitaSASAudio* info = sceClibMspaceMalloc(mspace_internal, sizeof(vitaSASAudio));
+	vitaSASAudio* info = heap_alloc_heap_memory(heap_internal, sizeof(vitaSASAudio));
 	if (info == NULL) {
-		SCE_DBG_LOG_ERROR("[SAS] sceClibMspaceMalloc() returned NULL");
+		SCE_DBG_LOG_ERROR("[SAS] heap_alloc_heap_memory() returned NULL");
 		return NULL;
 	}
 
@@ -597,9 +609,9 @@ vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize)
 
 vitaSASAudio* vitaSAS_load_audio_WAV(char* soundPath, int io_type)
 {
-	vitaSASAudio* info = sceClibMspaceMalloc(mspace_internal, sizeof(vitaSASAudio));
+	vitaSASAudio* info = heap_alloc_heap_memory(heap_internal, sizeof(vitaSASAudio));
 	if (info == NULL) {
-		SCE_DBG_LOG_ERROR("[SAS] sceClibMspaceMalloc() returned NULL");
+		SCE_DBG_LOG_ERROR("[SAS] heap_alloc_heap_memory() returned NULL");
 		return NULL;
 	}
 
@@ -616,9 +628,9 @@ vitaSASAudio* vitaSAS_load_audio_WAV(char* soundPath, int io_type)
 
 vitaSASAudio* vitaSAS_load_audio_VAG(char* soundPath, int io_type)
 {
-	vitaSASAudio* info = sceClibMspaceMalloc(mspace_internal, sizeof(vitaSASAudio));
+	vitaSASAudio* info = heap_alloc_heap_memory(heap_internal, sizeof(vitaSASAudio));
 	if (info == NULL) {
-		SCE_DBG_LOG_ERROR("[SAS] sceClibMspaceMalloc() returned NULL");
+		SCE_DBG_LOG_ERROR("[SAS] heap_alloc_heap_memory() returned NULL");
 		return NULL;
 	}
 
