@@ -14,6 +14,7 @@ project(vitaSAS)
 
 add_executable(${PROJECT_NAME}
   source/SAS.c
+  source/heap.c
   source/audio_out.c
   source/audio_dec_common.c
   source/audio_dec_at9.c
@@ -49,7 +50,6 @@ target_link_libraries(${PROJECT_NAME}
   SceDisplay_stub_weak 
   SceAppMgr_stub_weak 
   SceLibc_stub_weak
-  gcc
 )
 
 dolce_create_self(${PROJECT_NAME}.suprx ${PROJECT_NAME}

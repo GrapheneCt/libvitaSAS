@@ -10,7 +10,7 @@ vitaSAS:
   modules:
     vitaSAS:
       functions:
-        - vitaSAS_pass_mspace
+        - vitaSAS_set_heap_size
         - vitaSAS_init
         - vitaSAS_finish
         - vitaSAS_create_system

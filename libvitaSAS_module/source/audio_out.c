@@ -4,9 +4,10 @@
 #include <psp2/kernel/threadmgr.h> 
 
 #include "vitaSAS.h"
+#include "heap.h"
 
 extern unsigned int g_portIdBGM;
-extern void* mspace_internal;
+extern void* heap_internal;
 
 void vitaSAS_internal_output_for_decoder(Buffer *pOutput)
 {
@@ -37,8 +38,8 @@ int vitaSAS_internal_update_thread(unsigned int args, void *argc)
 	work = *(AudioOutWork**)argc;
 
 	short* aBuffer[BUFFER_MAX];
-	aBuffer[0] = sceClibMspaceMalloc(mspace_internal, work->numGrain * 4);
-	aBuffer[1] = sceClibMspaceMalloc(mspace_internal, work->numGrain * 4);
+	aBuffer[0] = heap_alloc_heap_memory(heap_internal, work->numGrain * 4);
+	aBuffer[1] = heap_alloc_heap_memory(heap_internal, work->numGrain * 4);
 
 	/* Open audio out port */
 
@@ -90,8 +91,8 @@ abort:
 
 	/* Free buffers */
 
-	sceClibMspaceFree(mspace_internal, aBuffer[0]);
-	sceClibMspaceFree(mspace_internal, aBuffer[1]);
+	heap_free_heap_memory(heap_internal, aBuffer[0]);
+	heap_free_heap_memory(heap_internal, aBuffer[1]);
 
 	/* Flush buffer */
 

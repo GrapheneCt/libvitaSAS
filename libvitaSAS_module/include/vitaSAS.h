@@ -15,6 +15,8 @@ extern "C" {
 #define VITASAS_USE_MAIN_MEMORY 1
 #define VITASAS_USE_PHYCONT_MEMORY 0
 
+#define DEFAULT_HEAP_SIZE 1 * 1024 * 1024;
+
 /* SAS system limits */
 
 #define MAX_SAS_SYSTEM_NUM			8
@@ -115,12 +117,12 @@ typedef struct VitaSASSystemParam {
 /*----------------------------- Common -----------------------------*/
 
 /**
- * Pass sceClibMspace to libvitaSAS
+ * Set internal heap size (1MB by default). Call this before initialization.
  *
- * @param[in] mspace - mspace created with sceClibMspaceCreate()
+ * @param[in] size - size of the heap in bytes
  *
  */
-void vitaSAS_pass_mspace(void* mspace);
+void vitaSAS_set_heap_size(unsigned int size);
 
 /**
  * Initialize libvitaSAS
@@ -241,10 +243,10 @@ vitaSASAudio* vitaSAS_load_audio_PCM(char* soundPath, int io_type);
 vitaSASAudio* vitaSAS_load_audio_WAV(char* soundPath, int io_type);
 
 /**
- * Create SAS sample audio data from PCM data buffer
+ * Create SAS sample audio data from data buffer
  *
- * @param[in] pData - pointer to the buffer that holds PCM sample data
- * @param[in] dataSize - size of the PCM sample data buffer
+ * @param[in] pData - pointer to the buffer that holds sample data
+ * @param[in] dataSize - size of the sample data buffer
  *
  * @return SAS voice information structure, NULL on error.
  */
