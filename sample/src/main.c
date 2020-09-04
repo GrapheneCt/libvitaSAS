@@ -28,15 +28,6 @@ int _newlib_heap_size_user = 1 * 1024 * 1024;
 
 int main(void)
 {
-	/* Create C heap for vitaSAS (required for system mode application support) */
-
-	void* mspace;
-	void* clibm_base;
-	SceUID clib_heap = sceKernelAllocMemBlock("ClibHeap", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE, CLIB_HEAP_SIZE, NULL);
-	sceKernelGetMemBlockBase(clib_heap, &clibm_base);
-	mspace = sceClibMspaceCreate(clibm_base, CLIB_HEAP_SIZE);
-	vitaSAS_pass_mspace(mspace);
-
 	/* Audio section */
 
 	vitaSAS_init(0);
