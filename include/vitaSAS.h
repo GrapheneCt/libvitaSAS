@@ -91,7 +91,7 @@ typedef struct VitaSAS_Decoder {
 
 typedef struct vitaSASVoiceParam {
 	SceUInt32 loop;
-	SceUInt32 loopSize;
+	SceInt32 loopSize;
 	SceUInt32 pitch;
 	SceUInt32 volLDry;
 	SceUInt32 volRDry;
