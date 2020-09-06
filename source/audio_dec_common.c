@@ -9,7 +9,7 @@
 #include "vitaSAS.h"
 #include "heap.h"
 
-extern void* heap_internal;
+extern void* vitaSAS_heap_internal;
 extern unsigned int g_portIdBGM;
 
 void vitaSAS_separate_channels_PCM(short* pBufL, short* pBufR, short* pBufSrc, unsigned int bufSrcSize)
@@ -210,7 +210,7 @@ void vitaSAS_internal_free_memory_for_codec_engine(const CodecEngineMemBlock* co
 
 CodecEngineMemBlock* vitaSAS_internal_allocate_memory_for_codec_engine(unsigned int codecType, SceAudiodecCtrl* addecctrl, unsigned int useMainMem)
 {
-	CodecEngineMemBlock* codecMemBlock = heap_alloc_heap_memory(heap_internal, sizeof(CodecEngineMemBlock));
+	CodecEngineMemBlock* codecMemBlock = heap_alloc_heap_memory(vitaSAS_heap_internal, sizeof(CodecEngineMemBlock));
 
 	SceUID uidMemBlock, uidUnmap;
 	uidMemBlock = 0;
@@ -284,8 +284,8 @@ error:
 
 void vitaSAS_destroy_decoder(VitaSAS_Decoder* decoderInfo)
 {
-	heap_free_heap_memory(heap_internal, decoderInfo->pOutput->buf.op[0]);
-	heap_free_heap_memory(heap_internal, decoderInfo->pOutput->buf.op[1]);
+	heap_free_heap_memory(vitaSAS_heap_internal, decoderInfo->pOutput->buf.op[0]);
+	heap_free_heap_memory(vitaSAS_heap_internal, decoderInfo->pOutput->buf.op[1]);
 	if (decoderInfo->pAudiodecCtrl->pInfo->size != sizeof(decoderInfo->pAudiodecCtrl->pInfo->mp3)) {
 		sceAudiodecDeleteDecoderExternal(decoderInfo->pAudiodecCtrl, &decoderInfo->codecMemBlock->vaContext);
 		vitaSAS_internal_free_memory_for_codec_engine(decoderInfo->codecMemBlock);
@@ -294,11 +294,11 @@ void vitaSAS_destroy_decoder(VitaSAS_Decoder* decoderInfo)
 		sceAudiodecDeleteDecoder(decoderInfo->pAudiodecCtrl);
 		sceAudiodecTermLibrary(SCE_AUDIODEC_TYPE_MP3);
 	}
-	heap_free_heap_memory(heap_internal, decoderInfo->codecMemBlock);
-	heap_free_heap_memory(heap_internal, decoderInfo->pInput->buf.p);
-	heap_free_heap_memory(heap_internal, decoderInfo->pAudiodecInfo);
-	heap_free_heap_memory(heap_internal, decoderInfo->pAudiodecCtrl);
-	heap_free_heap_memory(heap_internal, decoderInfo->pOutput);
-	heap_free_heap_memory(heap_internal, decoderInfo->pInput);
-	heap_free_heap_memory(heap_internal, decoderInfo);
+	heap_free_heap_memory(vitaSAS_heap_internal, decoderInfo->codecMemBlock);
+	heap_free_heap_memory(vitaSAS_heap_internal, decoderInfo->pInput->buf.p);
+	heap_free_heap_memory(vitaSAS_heap_internal, decoderInfo->pAudiodecInfo);
+	heap_free_heap_memory(vitaSAS_heap_internal, decoderInfo->pAudiodecCtrl);
+	heap_free_heap_memory(vitaSAS_heap_internal, decoderInfo->pOutput);
+	heap_free_heap_memory(vitaSAS_heap_internal, decoderInfo->pInput);
+	heap_free_heap_memory(vitaSAS_heap_internal, decoderInfo);
 }

@@ -7,7 +7,7 @@
 #include "heap.h"
 
 extern unsigned int g_portIdBGM;
-extern void* heap_internal;
+extern void* vitaSAS_heap_internal;
 
 void vitaSAS_internal_output_for_decoder(Buffer *pOutput)
 {
@@ -38,8 +38,8 @@ int vitaSAS_internal_update_thread(unsigned int args, void *argc)
 	work = *(AudioOutWork**)argc;
 
 	short* aBuffer[BUFFER_MAX];
-	aBuffer[0] = heap_alloc_heap_memory(heap_internal, work->numGrain * 4);
-	aBuffer[1] = heap_alloc_heap_memory(heap_internal, work->numGrain * 4);
+	aBuffer[0] = heap_alloc_heap_memory(vitaSAS_heap_internal, work->numGrain * 4);
+	aBuffer[1] = heap_alloc_heap_memory(vitaSAS_heap_internal, work->numGrain * 4);
 
 	/* Open audio out port */
 
@@ -91,8 +91,8 @@ abort:
 
 	/* Free buffers */
 
-	heap_free_heap_memory(heap_internal, aBuffer[0]);
-	heap_free_heap_memory(heap_internal, aBuffer[1]);
+	heap_free_heap_memory(vitaSAS_heap_internal, aBuffer[0]);
+	heap_free_heap_memory(vitaSAS_heap_internal, aBuffer[1]);
 
 	/* Flush buffer */
 

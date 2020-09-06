@@ -7,7 +7,7 @@
 #include "vitaSAS.h"
 #include "heap.h"
 
-extern void* heap_internal;
+extern void* vitaSAS_heap_internal;
 extern unsigned int g_portIdBGM;
 
 int vitaSAS_internal_parseMpegHeader(MpegHeader *pHeader, const uint8_t * pBuf, unsigned int bufSize)
@@ -71,12 +71,12 @@ VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath)
 {
 	int ret = 0;
 
-	VitaSAS_Decoder* decoderInfo = heap_alloc_heap_memory(heap_internal, sizeof(VitaSAS_Decoder));
+	VitaSAS_Decoder* decoderInfo = heap_alloc_heap_memory(vitaSAS_heap_internal, sizeof(VitaSAS_Decoder));
 
-	FileStream* pInput = heap_alloc_heap_memory(heap_internal, sizeof(FileStream));
-	FileStream* pOutput = heap_alloc_heap_memory(heap_internal, sizeof(FileStream));
-	SceAudiodecCtrl* pAudiodecCtrl = heap_alloc_heap_memory(heap_internal, sizeof(SceAudiodecCtrl));
-	SceAudiodecInfo* pAudiodecInfo = heap_alloc_heap_memory(heap_internal, sizeof(SceAudiodecInfo));
+	FileStream* pInput = heap_alloc_heap_memory(vitaSAS_heap_internal, sizeof(FileStream));
+	FileStream* pOutput = heap_alloc_heap_memory(vitaSAS_heap_internal, sizeof(FileStream));
+	SceAudiodecCtrl* pAudiodecCtrl = heap_alloc_heap_memory(vitaSAS_heap_internal, sizeof(SceAudiodecCtrl));
+	SceAudiodecInfo* pAudiodecInfo = heap_alloc_heap_memory(vitaSAS_heap_internal, sizeof(SceAudiodecInfo));
 
 	if (decoderInfo == NULL || pInput == NULL || pOutput == NULL || pAudiodecCtrl == NULL || pAudiodecInfo == NULL) {
 		SCE_DBG_LOG_ERROR("[DEC] heap_alloc_heap_memory() returned NULL");
@@ -125,7 +125,7 @@ VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath)
 	heap_alloc_opt_param param;
 	param.size = sizeof(heap_alloc_opt_param);
 	param.alignment = SCE_AUDIODEC_ALIGNMENT_SIZE;
-	pInput->buf.p = heap_alloc_heap_memory_with_option(heap_internal, pInput->buf.size, &param);
+	pInput->buf.p = heap_alloc_heap_memory_with_option(vitaSAS_heap_internal, pInput->buf.size, &param);
 	if (pInput->buf.p == NULL) {
 		SCE_DBG_LOG_ERROR("[DEC] sceClibMspaceMemalign() returned NULL");
 		goto failed;
@@ -201,13 +201,13 @@ VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath)
 
 	/* Allocate output buffers */
 
-	pOutput->buf.op[0] = heap_alloc_heap_memory_with_option(heap_internal, pOutput->buf.size, &param);
+	pOutput->buf.op[0] = heap_alloc_heap_memory_with_option(vitaSAS_heap_internal, pOutput->buf.size, &param);
 	if (pOutput->buf.op[0] == NULL) {
 		SCE_DBG_LOG_ERROR("[DEC] heap_alloc_heap_memory_with_option() returned NULL");
 		goto failed;
 	}
 
-	pOutput->buf.op[1] = heap_alloc_heap_memory_with_option(heap_internal, pOutput->buf.size, &param);
+	pOutput->buf.op[1] = heap_alloc_heap_memory_with_option(vitaSAS_heap_internal, pOutput->buf.size, &param);
 	if (pOutput->buf.op[1] == NULL) {
 		SCE_DBG_LOG_ERROR("[DEC] heap_alloc_heap_memory_with_option() returned NULL");
 		goto failed;
@@ -227,21 +227,21 @@ VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath)
 failed:
 
 	if (decoderInfo != NULL)
-		heap_free_heap_memory(heap_internal, decoderInfo);
+		heap_free_heap_memory(vitaSAS_heap_internal, decoderInfo);
 	if (pInput != NULL)
-		heap_free_heap_memory(heap_internal, pInput);
+		heap_free_heap_memory(vitaSAS_heap_internal, pInput);
 	if (pOutput != NULL)
-		heap_free_heap_memory(heap_internal, pOutput);
+		heap_free_heap_memory(vitaSAS_heap_internal, pOutput);
 	if (pAudiodecCtrl != NULL)
-		heap_free_heap_memory(heap_internal, pAudiodecCtrl);
+		heap_free_heap_memory(vitaSAS_heap_internal, pAudiodecCtrl);
 	if (pAudiodecInfo != NULL)
-		heap_free_heap_memory(heap_internal, pAudiodecInfo);
+		heap_free_heap_memory(vitaSAS_heap_internal, pAudiodecInfo);
 	if (pInput->buf.p != NULL)
-		heap_free_heap_memory(heap_internal, pInput->buf.p);
+		heap_free_heap_memory(vitaSAS_heap_internal, pInput->buf.p);
 	if (pOutput->buf.op[0] != NULL)
-		heap_free_heap_memory(heap_internal, pOutput->buf.op[0]);
+		heap_free_heap_memory(vitaSAS_heap_internal, pOutput->buf.op[0]);
 	if (pOutput->buf.op[1] != NULL)
-		heap_free_heap_memory(heap_internal, pOutput->buf.op[1]);
+		heap_free_heap_memory(vitaSAS_heap_internal, pOutput->buf.op[1]);
 
 	return NULL;
 }
