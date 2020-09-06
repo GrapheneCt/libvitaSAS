@@ -14,7 +14,7 @@
 
 static int SASSystenEVF[MAX_SAS_SYSTEM_NUM];
 
-void* heap_internal;
+void* vitaSAS_heap_internal;
 int g_portIdBGM = 0;
 
 static SceUID SASSystemFlagUID = 0;
@@ -57,7 +57,7 @@ static void vitaSAS_internal_load_audio_WAV_FIOS2(char *mountedFilePath, size_t 
 		goto failed;
 	}
 
-	header = heap_alloc_heap_memory(heap_internal, 64);
+	header = heap_alloc_heap_memory(vitaSAS_heap_internal, 64);
 
 	result = sceFiosFHReadSync(NULL, file, header, 64);
 	if (result < 0) {
@@ -84,7 +84,7 @@ static void vitaSAS_internal_load_audio_WAV_FIOS2(char *mountedFilePath, size_t 
 	size = *(uint32_t *)(header + 4);
 	offset = headerSize + 8;
 
-	heap_free_heap_memory(heap_internal, header);
+	heap_free_heap_memory(vitaSAS_heap_internal, header);
 
 	mem_size = ROUND_UP(size, 4 * 1024);
 	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, mem_size, NULL);
@@ -113,7 +113,7 @@ static void vitaSAS_internal_load_audio_WAV_FIOS2(char *mountedFilePath, size_t 
 failed:
 
 	if (header != NULL)
-		heap_free_heap_memory(heap_internal, header);
+		heap_free_heap_memory(vitaSAS_heap_internal, header);
 
 	if (mem_id != 0)
 		sceKernelFreeMemBlock(mem_id);
@@ -272,7 +272,7 @@ static void vitaSAS_internal_load_audio_WAV(char *path, size_t *outSize, SceUID*
 		goto failed;
 	}
 
-	header = heap_alloc_heap_memory(heap_internal, 64);
+	header = heap_alloc_heap_memory(vitaSAS_heap_internal, 64);
 
 	result = sceIoRead(file, header, 64);
 	if (result < 0) {
@@ -299,7 +299,7 @@ static void vitaSAS_internal_load_audio_WAV(char *path, size_t *outSize, SceUID*
 	size = *(uint32_t *)(header + 4);
 	offset = headerSize + 8;
 
-	heap_free_heap_memory(heap_internal, header);
+	heap_free_heap_memory(vitaSAS_heap_internal, header);
 
 	mem_size = ROUND_UP(size, 4 * 1024);
 	mem_id = sceKernelAllocMemBlock("vitaSAS_sample_storage", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, mem_size, NULL);
@@ -328,7 +328,7 @@ static void vitaSAS_internal_load_audio_WAV(char *path, size_t *outSize, SceUID*
 failed:
 
 	if (header != NULL)
-		heap_free_heap_memory(heap_internal, header);
+		heap_free_heap_memory(vitaSAS_heap_internal, header);
 
 	if (mem_id != 0)
 		sceKernelFreeMemBlock(mem_id);
@@ -351,7 +351,7 @@ int vitaSAS_finish(void)
 
 	/* Delete heap */
 
-	heap_delete_heap(heap_internal);
+	heap_delete_heap(vitaSAS_heap_internal);
 
 	/* Unload the SAS module */
 
@@ -381,7 +381,7 @@ int vitaSAS_init(unsigned int openBGM)
 
 	/* Initialize heap */
 
-	heap_internal = heap_create_heap("vitaSAS_heap", heap_size, HEAP_AUTO_EXTEND, NULL);
+	vitaSAS_heap_internal = heap_create_heap("vitaSAS_heap", heap_size, HEAP_AUTO_EXTEND, NULL);
 
 	/* Open BGM port for Codec Engine decoders */
 
@@ -437,8 +437,8 @@ void vitaSAS_destroy_system(void)
 
 	sceSasExitInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, &buffer, &bufferSize);
 
-	heap_free_heap_memory(heap_internal, buffer);
-	heap_free_heap_memory(heap_internal, SASSystemStorage[SASCurrentSystemNum]);
+	heap_free_heap_memory(vitaSAS_heap_internal, buffer);
+	heap_free_heap_memory(vitaSAS_heap_internal, SASSystemStorage[SASCurrentSystemNum]);
 
 	/* Unregister SAS system position */
 
@@ -466,7 +466,7 @@ int vitaSAS_create_system_with_config(const char* sasConfig, VitaSASSystemParam*
 
 	/* Create SAS system instance */
 
-	vitaSASSystem* system = heap_alloc_heap_memory(heap_internal, sizeof(vitaSASSystem));
+	vitaSASSystem* system = heap_alloc_heap_memory(vitaSAS_heap_internal, sizeof(vitaSASSystem));
 	if (system == NULL) {
 		SCE_DBG_LOG_ERROR("[SAS] heap_alloc_heap_memory() returned NULL");
 		return -1;
@@ -517,7 +517,7 @@ int vitaSAS_create_system_with_config(const char* sasConfig, VitaSASSystemParam*
 
 	SCE_DBG_LOG_DEBUG("[SAS] SAS system requested: %f MB", (float)bufferSize / 1024.0f / 1024.0f);
 
-	buffer = heap_alloc_heap_memory(heap_internal, bufferSize);
+	buffer = heap_alloc_heap_memory(vitaSAS_heap_internal, bufferSize);
 	if (buffer == NULL) {
 		SCE_DBG_LOG_ERROR("[SAS] heap_alloc_heap_memory() returned NULL");
 		goto error;
@@ -559,8 +559,8 @@ int vitaSAS_create_system_with_config(const char* sasConfig, VitaSASSystemParam*
 error:
 
 	if (buffer != NULL)
-		heap_free_heap_memory(heap_internal, buffer);
-	heap_free_heap_memory(heap_internal, system);
+		heap_free_heap_memory(vitaSAS_heap_internal, buffer);
+	heap_free_heap_memory(vitaSAS_heap_internal, system);
 	return -1;
 }
 
@@ -583,12 +583,12 @@ void vitaSAS_free_audio(vitaSASAudio* info)
 {
 	if (info->data_id)
 		sceKernelFreeMemBlock(info->data_id);
-	heap_free_heap_memory(heap_internal, info);
+	heap_free_heap_memory(vitaSAS_heap_internal, info);
 }
 
 vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize)
 {
-	vitaSASAudio* info = heap_alloc_heap_memory(heap_internal, sizeof(vitaSASAudio));
+	vitaSASAudio* info = heap_alloc_heap_memory(vitaSAS_heap_internal, sizeof(vitaSASAudio));
 	if (info == NULL) {
 		SCE_DBG_LOG_ERROR("[SAS] heap_alloc_heap_memory() returned NULL");
 		return NULL;
@@ -610,7 +610,7 @@ vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize)
 
 vitaSASAudio* vitaSAS_load_audio_WAV(char* soundPath, int io_type)
 {
-	vitaSASAudio* info = heap_alloc_heap_memory(heap_internal, sizeof(vitaSASAudio));
+	vitaSASAudio* info = heap_alloc_heap_memory(vitaSAS_heap_internal, sizeof(vitaSASAudio));
 	if (info == NULL) {
 		SCE_DBG_LOG_ERROR("[SAS] heap_alloc_heap_memory() returned NULL");
 		return NULL;
@@ -629,7 +629,7 @@ vitaSASAudio* vitaSAS_load_audio_WAV(char* soundPath, int io_type)
 
 vitaSASAudio* vitaSAS_load_audio_VAG(char* soundPath, int io_type)
 {
-	vitaSASAudio* info = heap_alloc_heap_memory(heap_internal, sizeof(vitaSASAudio));
+	vitaSASAudio* info = heap_alloc_heap_memory(vitaSAS_heap_internal, sizeof(vitaSASAudio));
 	if (info == NULL) {
 		SCE_DBG_LOG_ERROR("[SAS] heap_alloc_heap_memory() returned NULL");
 		return NULL;
@@ -775,7 +775,7 @@ int module_exit() {
 
 void _start() __attribute__((weak, alias("module_start")));
 int module_start(SceSize argc, void *args) {
-	sceClibPrintf("vitaSAS module start, ver. 01.10\n");
+	sceClibPrintf("vitaSAS module start, ver. 01.11\n");
 	return SCE_KERNEL_START_SUCCESS;
 }
 
