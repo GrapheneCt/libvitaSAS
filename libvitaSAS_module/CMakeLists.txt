@@ -50,6 +50,7 @@ target_link_libraries(${PROJECT_NAME}
   SceDisplay_stub_weak 
   SceAppMgr_stub_weak 
   SceLibc_stub_weak
+  SceRtabi_stub_weak
 )
 
 dolce_create_self(${PROJECT_NAME}.suprx ${PROJECT_NAME}
