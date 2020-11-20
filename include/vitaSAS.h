@@ -1,12 +1,28 @@
 #ifndef VITASAS_H
 #define VITASAS_H
 
+#include <psp2/audiodec.h> 
+#include <psp2/audioout.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <psp2/audiodec.h> 
-#include <psp2/audioout.h>
+#define VITASAS_VERSION_INTERNAL 0120
+
+#ifndef VITASAS_VERSION
+#define VITASAS_VERSION VITASAS_VERSION_INTERNAL
+#endif
+
+//#define VITASAS_PRX
+
+#if _SCE_TARGET_OS_PSP2
+#ifdef VITASAS_PRX
+#define PRX_INTERFACE __declspec (dllexport)
+#endif
+#else
+#define PRX_INTERFACE
+#endif
 
 #define ROUND_UP(x, a)	((((unsigned int)x)+((a)-1u))&(~((a)-1u)))
 #define VITASAS_GRAIN_MAX 2048
@@ -117,12 +133,23 @@ typedef struct VitaSASSystemParam {
 /*----------------------------- Common -----------------------------*/
 
 /**
+ * Check version of vitaSAS library.
+ *
+ * @return SCE_OK if versions match, -1 otherwise.
+ */
+#if VITASAS_VERSION < 0120
+#define vitaSAS_check_version(vitaSAS_version) (0);
+#else
+#define vitaSAS_check_version(vitaSAS_version) (vitaSAS_version == VITASAS_VERSION_INTERNAL ? 0 : -1);
+#endif
+
+/**
  * Set internal heap size (1MB by default). Call this before initialization.
  *
  * @param[in] size - size of the heap in bytes
  *
  */
-void vitaSAS_set_heap_size(unsigned int size);
+PRX_INTERFACE void vitaSAS_set_heap_size(unsigned int size);
 
 /**
  * Initialize libvitaSAS
@@ -131,14 +158,14 @@ void vitaSAS_set_heap_size(unsigned int size);
  *
  * @return SCE_OK, <0 on error.
  */
-int vitaSAS_init(unsigned int openBGM);
+PRX_INTERFACE int vitaSAS_init(unsigned int openBGM);
 
 /**
  * Finalize libvitaSAS
  *
  * @return SCE_OK, <0 on error.
  */
-int vitaSAS_finish(void);
+PRX_INTERFACE int vitaSAS_finish(void);
 
 /**
  * Create SAS system instance
@@ -147,7 +174,7 @@ int vitaSAS_finish(void);
  *
  * @return SAS system number, <0 on error.
  */
-int vitaSAS_create_system(VitaSASSystemParam* systemInitParam);
+PRX_INTERFACE int vitaSAS_create_system(VitaSASSystemParam* systemInitParam);
 
 /**
  * Create SAS system instance with specified configuration
@@ -157,13 +184,13 @@ int vitaSAS_create_system(VitaSASSystemParam* systemInitParam);
  *
  * @return SAS system number, <0 on error.
  */
-int vitaSAS_create_system_with_config(const char* sasConfig, VitaSASSystemParam* systemInitParam);
+PRX_INTERFACE int vitaSAS_create_system_with_config(const char* sasConfig, VitaSASSystemParam* systemInitParam);
 
 /**
  * Destroy currently selected SAS system
  *
  */
-void vitaSAS_destroy_system(void);
+PRX_INTERFACE void vitaSAS_destroy_system(void);
 
 /**
  * Select SAS system instance to work with
@@ -171,28 +198,28 @@ void vitaSAS_destroy_system(void);
  * @param[in] systemNum - SAS system number to select
  *
  */
-void vitaSAS_select_system(int systemNum);
+PRX_INTERFACE void vitaSAS_select_system(int systemNum);
 
 /**
  * Suspend currently selected system
  *
  * @return SCE_OK, <0 on error.
  */
-int vitaSAS_pause_system_render(void);
+PRX_INTERFACE int vitaSAS_pause_system_render(void);
 
 /**
  * Resume currently selected system
  *
  * @return SCE_OK, <0 on error.
  */
-int vitaSAS_resume_system_render(void);
+PRX_INTERFACE int vitaSAS_resume_system_render(void);
 
 /**
  * Get currently selected SAS system handle
  *
  * @return SAS system handle
  */
-SceUID vitaSAS_get_system_handle(void);
+PRX_INTERFACE SceUID vitaSAS_get_system_handle(void);
 
 /**
  * Set mixer volume for currently selected SAS system 
@@ -202,7 +229,7 @@ SceUID vitaSAS_get_system_handle(void);
  * @param[in] subSystemMixVolR - mixer volume for right channel
  *
  */
-void vitaSAS_set_sub_system_vol(unsigned int subSystemMixVolL, unsigned int subSystemMixVolR);
+PRX_INTERFACE void vitaSAS_set_sub_system_vol(unsigned int subSystemMixVolL, unsigned int subSystemMixVolR);
 
 /**
  * Delete SAS sample audio data
@@ -210,7 +237,7 @@ void vitaSAS_set_sub_system_vol(unsigned int subSystemMixVolL, unsigned int subS
  * @param[in] info - voice information structure
  *
  */
-void vitaSAS_free_audio(vitaSASAudio* info);
+PRX_INTERFACE void vitaSAS_free_audio(vitaSASAudio* info);
 
 /**
  * Create SAS sample audio data from VAG file
@@ -220,7 +247,7 @@ void vitaSAS_free_audio(vitaSASAudio* info);
  *
  * @return SAS voice information structure, NULL on error.
  */
-vitaSASAudio* vitaSAS_load_audio_VAG(char* soundPath, int io_type);
+PRX_INTERFACE vitaSASAudio* vitaSAS_load_audio_VAG(char* soundPath, int io_type);
 
 /**
  * Create SAS sample audio data from raw PCM file
@@ -230,7 +257,7 @@ vitaSASAudio* vitaSAS_load_audio_VAG(char* soundPath, int io_type);
  *
  * @return SAS voice information structure, NULL on error.
  */
-vitaSASAudio* vitaSAS_load_audio_PCM(char* soundPath, int io_type);
+PRX_INTERFACE vitaSASAudio* vitaSAS_load_audio_PCM(char* soundPath, int io_type);
 
 /**
  * Create SAS sample audio data from WAV file
@@ -240,7 +267,7 @@ vitaSASAudio* vitaSAS_load_audio_PCM(char* soundPath, int io_type);
  *
  * @return SAS voice information structure, NULL on error.
  */
-vitaSASAudio* vitaSAS_load_audio_WAV(char* soundPath, int io_type);
+PRX_INTERFACE vitaSASAudio* vitaSAS_load_audio_WAV(char* soundPath, int io_type);
 
 /**
  * Create SAS sample audio data from data buffer
@@ -250,7 +277,7 @@ vitaSASAudio* vitaSAS_load_audio_WAV(char* soundPath, int io_type);
  *
  * @return SAS voice information structure, NULL on error.
  */
-vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize);
+PRX_INTERFACE vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize);
 
 /**
  * NEON-optimized channel separation for raw PCM
@@ -261,7 +288,7 @@ vitaSASAudio* vitaSAS_load_audio_custom(void* pData, unsigned int dataSize);
  * @param[in] bufSrcSize - size of the input PCM data buffer
  *
  */
-void vitaSAS_separate_channels_PCM(short* pBufL, short* pBufR, short* pBufSrc, unsigned int bufSrcSize);
+PRX_INTERFACE void vitaSAS_separate_channels_PCM(short* pBufL, short* pBufR, short* pBufSrc, unsigned int bufSrcSize);
 
 /**
  * Wrapper call for sceSasSetKeyOn(), enable vocalization of voice
@@ -270,7 +297,7 @@ void vitaSAS_separate_channels_PCM(short* pBufL, short* pBufR, short* pBufSrc, u
  *
  * @return SCE_OK, <0 on error.
  */
-int vitaSAS_set_key_on(unsigned int voiceID);
+PRX_INTERFACE int vitaSAS_set_key_on(unsigned int voiceID);
 
 /**
  * Wrapper call for sceSasSetKeyOff(), disable vocalization of voice
@@ -279,7 +306,7 @@ int vitaSAS_set_key_on(unsigned int voiceID);
  *
  * @return SCE_OK, <0 on error.
  */
-int vitaSAS_set_key_off(unsigned int voiceID);
+PRX_INTERFACE int vitaSAS_set_key_off(unsigned int voiceID);
 
 /**
  * Wrapper call for sceSasGetEndState(), get sound generation end state
@@ -288,7 +315,7 @@ int vitaSAS_set_key_off(unsigned int voiceID);
  *
  * @return SCE_OK, <0 on error.
  */
-int vitaSAS_get_end_state(unsigned int voiceID);
+PRX_INTERFACE int vitaSAS_get_end_state(unsigned int voiceID);
 
 /*----------------------------- Codec Engine decoding -----------------------------*/
 
@@ -298,7 +325,7 @@ int vitaSAS_get_end_state(unsigned int voiceID);
  * @param[in] decoderInfo - decoder instance information to destroy
  *
  */
-void vitaSAS_destroy_decoder(VitaSAS_Decoder* decoderInfo);
+PRX_INTERFACE void vitaSAS_destroy_decoder(VitaSAS_Decoder* decoderInfo);
 
 /**
  * Create AT9 decoder
@@ -308,7 +335,7 @@ void vitaSAS_destroy_decoder(VitaSAS_Decoder* decoderInfo);
  *
  * @return decoder information structure, NULL on error.
  */
-VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath, unsigned int useMainMem);
+PRX_INTERFACE VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath, unsigned int useMainMem);
 
 /**
  * Create MP3 decoder
@@ -317,7 +344,7 @@ VitaSAS_Decoder* vitaSAS_create_AT9_decoder(const char* soundPath, unsigned int 
  *
  * @return decoder information structure, NULL on error.
  */
-VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath);
+PRX_INTERFACE VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath);
 
 /**
  * Create AAC decoder
@@ -327,7 +354,7 @@ VitaSAS_Decoder* vitaSAS_create_MP3_decoder(const char* soundPath);
  *
  * @return decoder information structure, NULL on error.
  */
-VitaSAS_Decoder* vitaSAS_create_AAC_decoder(const char* soundPath, unsigned int useMainMem);
+PRX_INTERFACE VitaSAS_Decoder* vitaSAS_create_AAC_decoder(const char* soundPath, unsigned int useMainMem);
 
 /**
  * Start decoder playback
@@ -338,7 +365,7 @@ VitaSAS_Decoder* vitaSAS_create_AAC_decoder(const char* soundPath, unsigned int 
  * @param[in] thCpu - decoding thread CPU affinity mask
  *
  */
-void vitaSAS_decoder_start_playback(VitaSAS_Decoder* decoderInfo, unsigned int thPriority, unsigned int thStackSize, unsigned int thCpu);
+PRX_INTERFACE void vitaSAS_decoder_start_playback(VitaSAS_Decoder* decoderInfo, unsigned int thPriority, unsigned int thStackSize, unsigned int thCpu);
 
 /**
  * Pause decoder playback
@@ -346,7 +373,7 @@ void vitaSAS_decoder_start_playback(VitaSAS_Decoder* decoderInfo, unsigned int t
  * @param[in] decoderInfo - information structure of decoder
  *
  */
-void vitaSAS_decoder_pause_playback(VitaSAS_Decoder* decoderInfo);
+PRX_INTERFACE void vitaSAS_decoder_pause_playback(VitaSAS_Decoder* decoderInfo);
 
 /**
  * Resume decoder playback
@@ -354,7 +381,7 @@ void vitaSAS_decoder_pause_playback(VitaSAS_Decoder* decoderInfo);
  * @param[in] decoderInfo - information structure of decoder
  *
  */
-void vitaSAS_decoder_resume_playback(VitaSAS_Decoder* decoderInfo);
+PRX_INTERFACE void vitaSAS_decoder_resume_playback(VitaSAS_Decoder* decoderInfo);
 
 /**
  * Stop decoder playback
@@ -362,7 +389,7 @@ void vitaSAS_decoder_resume_playback(VitaSAS_Decoder* decoderInfo);
  * @param[in] decoderInfo - information structure of decoder
  *
  */
-void vitaSAS_decoder_stop_playback(VitaSAS_Decoder* decoderInfo);
+PRX_INTERFACE void vitaSAS_decoder_stop_playback(VitaSAS_Decoder* decoderInfo);
 
 /**
  * Seek decode position
@@ -371,7 +398,7 @@ void vitaSAS_decoder_stop_playback(VitaSAS_Decoder* decoderInfo);
  * @param[in] nEsSamples - position in elementary stream samples to seek
  *
  */
-void vitaSAS_decoder_seek(VitaSAS_Decoder* decoderInfo, unsigned int nEsSamples);
+PRX_INTERFACE void vitaSAS_decoder_seek(VitaSAS_Decoder* decoderInfo, unsigned int nEsSamples);
 
 /**
  * Decode to buffer
@@ -382,7 +409,7 @@ void vitaSAS_decoder_seek(VitaSAS_Decoder* decoderInfo, unsigned int nEsSamples)
  * @param[out] buffer - pointer to buffer to hold decoded PCM data
  *
  */
-void vitaSAS_decode_to_buffer(VitaSAS_Decoder* decoderInfo, unsigned int begEsSamples, unsigned int nEsSamples, uint8_t* buffer);
+PRX_INTERFACE void vitaSAS_decode_to_buffer(VitaSAS_Decoder* decoderInfo, unsigned int begEsSamples, unsigned int nEsSamples, uint8_t* buffer);
 
 /**
  * Get current position
@@ -391,7 +418,7 @@ void vitaSAS_decode_to_buffer(VitaSAS_Decoder* decoderInfo, unsigned int begEsSa
  *
  * @return current position in elementary stream samples, <0 on error.
  */
-unsigned int vitaSAS_decoder_get_current_es_offset(VitaSAS_Decoder* decoderInfo);
+PRX_INTERFACE unsigned int vitaSAS_decoder_get_current_es_offset(VitaSAS_Decoder* decoderInfo);
 
 /**
  * Get decoding end state
@@ -400,7 +427,7 @@ unsigned int vitaSAS_decoder_get_current_es_offset(VitaSAS_Decoder* decoderInfo)
  *
  * @return 0 if decoding is not finished, 1 if decoding is finished, <0 on error.
  */
-unsigned int vitaSAS_decoder_get_end_state(VitaSAS_Decoder* decoderInfo);
+PRX_INTERFACE unsigned int vitaSAS_decoder_get_end_state(VitaSAS_Decoder* decoderInfo);
 
 /*----------------------------- Voices -----------------------------*/
 
@@ -412,7 +439,7 @@ unsigned int vitaSAS_decoder_get_end_state(VitaSAS_Decoder* decoderInfo);
  * @param[in] voiceParam - initial voice parameters
  *
  */
-void vitaSAS_set_voice_VAG(unsigned int voiceID, const vitaSASAudio* info, const vitaSASVoiceParam* voiceParam);
+PRX_INTERFACE void vitaSAS_set_voice_VAG(unsigned int voiceID, const vitaSASAudio* info, const vitaSASVoiceParam* voiceParam);
 
 /**
  * Set PCM voice from preloaded voice data
@@ -422,7 +449,7 @@ void vitaSAS_set_voice_VAG(unsigned int voiceID, const vitaSASAudio* info, const
  * @param[in] voiceParam - initial voice parameters
  *
  */
-void vitaSAS_set_voice_PCM(unsigned int voiceID, const vitaSASAudio* info, const vitaSASVoiceParam* voiceParam);
+PRX_INTERFACE void vitaSAS_set_voice_PCM(unsigned int voiceID, const vitaSASAudio* info, const vitaSASVoiceParam* voiceParam);
 
 /**
  * Set noise generator voice
@@ -432,7 +459,7 @@ void vitaSAS_set_voice_PCM(unsigned int voiceID, const vitaSASAudio* info, const
  * @param[in] voiceParam - initial voice parameters
  *
  */
-void vitaSAS_set_voice_noise(unsigned int voiceID, unsigned int clock, const vitaSASVoiceParam* voiceParam);
+PRX_INTERFACE void vitaSAS_set_voice_noise(unsigned int voiceID, unsigned int clock, const vitaSASVoiceParam* voiceParam);
 
 /* Effects */
 
@@ -446,13 +473,13 @@ void vitaSAS_set_voice_noise(unsigned int voiceID, unsigned int clock, const vit
  * @param[in] feedbackLevel - FX feedback level
  *
  */
-void vitaSAS_set_effect(unsigned int effectType, unsigned int volL, unsigned int volR, unsigned int delayTime, unsigned int feedbackLevel);
+PRX_INTERFACE void vitaSAS_set_effect(unsigned int effectType, unsigned int volL, unsigned int volR, unsigned int delayTime, unsigned int feedbackLevel);
 
 /**
  * Clean all effects
  *
  */
-void vitaSAS_reset_effect(void);
+PRX_INTERFACE void vitaSAS_reset_effect(void);
 
 /**
  * Set SAS switch configuration (ON/OFF effects)
@@ -461,7 +488,7 @@ void vitaSAS_reset_effect(void);
  * @param[in] wetSwitch - Wet channel switch (0 - OFF, 1 - ON)
  *
  */
-void vitaSAS_set_switch_config(unsigned int drySwitch, unsigned int wetSwitch);
+PRX_INTERFACE void vitaSAS_set_switch_config(unsigned int drySwitch, unsigned int wetSwitch);
 
 /**
  * Wrapper call for sceSasSetPitch(), set voice pitch
@@ -470,7 +497,7 @@ void vitaSAS_set_switch_config(unsigned int drySwitch, unsigned int wetSwitch);
  * @param[in] pitch - pitch value
  *
  */
-void vitaSAS_set_pitch(unsigned int voiceID, unsigned int pitch);
+PRX_INTERFACE void vitaSAS_set_pitch(unsigned int voiceID, unsigned int pitch);
 
 /**
  * Wrapper call for sceSasSetVolume(), set voice volume
@@ -482,7 +509,7 @@ void vitaSAS_set_pitch(unsigned int voiceID, unsigned int pitch);
  * @param[in] volRWet - volume of right wet channel
  *
  */
-void vitaSAS_set_volume(unsigned int voiceID, unsigned int volLDry,
+PRX_INTERFACE void vitaSAS_set_volume(unsigned int voiceID, unsigned int volLDry,
 	unsigned int volRDry, unsigned int volLWet, unsigned int volRWet);
 
 /**
@@ -493,7 +520,7 @@ void vitaSAS_set_volume(unsigned int voiceID, unsigned int volLDry,
  * @param[in] adsr2 - envelope value 2
  *
  */
-void vitaSAS_set_simple_ADSR(unsigned int voiceID, unsigned int adsr1, unsigned int adsr2);
+PRX_INTERFACE void vitaSAS_set_simple_ADSR(unsigned int voiceID, unsigned int adsr1, unsigned int adsr2);
 
 /**
  * Wrapper call for sceSasSetSL(), set voice sustain level
@@ -502,7 +529,7 @@ void vitaSAS_set_simple_ADSR(unsigned int voiceID, unsigned int adsr1, unsigned 
  * @param[in] sustainLevel - sustain level
  *
  */
-void vitaSAS_set_SL(unsigned int voiceID, unsigned int sustainLevel);
+PRX_INTERFACE void vitaSAS_set_SL(unsigned int voiceID, unsigned int sustainLevel);
 
 /**
  * Wrapper call for sceSasSetADSRmode(), set voice envelope curve type
@@ -515,7 +542,7 @@ void vitaSAS_set_SL(unsigned int voiceID, unsigned int sustainLevel);
  * @param[in] r - release curve type
  *
  */
-void vitaSAS_set_ADSR_mode(unsigned int voiceID, unsigned int flag, unsigned int a, unsigned int d, unsigned int s, unsigned int r);
+PRX_INTERFACE void vitaSAS_set_ADSR_mode(unsigned int voiceID, unsigned int flag, unsigned int a, unsigned int d, unsigned int s, unsigned int r);
 
 /**
  * Wrapper call for sceSasSetADSR(), set voice envelope curve rates
@@ -528,7 +555,7 @@ void vitaSAS_set_ADSR_mode(unsigned int voiceID, unsigned int flag, unsigned int
  * @param[in] r - release rate
  *
  */
-void vitaSAS_set_ADSR(unsigned int voiceID, unsigned int flag, unsigned int a, unsigned int d, unsigned int s, unsigned int r);
+PRX_INTERFACE void vitaSAS_set_ADSR(unsigned int voiceID, unsigned int flag, unsigned int a, unsigned int d, unsigned int s, unsigned int r);
 
 /*----------------------------- Internal functions -----------------------------*/
 

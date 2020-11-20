@@ -1,4 +1,5 @@
 #include <psp2/kernel/threadmgr.h> 
+#include <psp2/kernel/modulemgr.h> 
 #include <psp2/kernel/sysmem.h> 
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/iofilemgr.h> 
@@ -761,4 +762,23 @@ int vitaSAS_get_end_state(unsigned int voiceID)
 {
 	return sceSasGetEndStateInternal(SASSystemStorage[SASCurrentSystemNum]->sasSystemHandle, voiceID);
 }
+
+
+#ifdef VITASAS_PRX
+int module_stop(SceSize argc, const void *args) {
+	sceClibPrintf("vitaSAS module stop\n");
+	return SCE_KERNEL_STOP_SUCCESS;
+}
+
+int module_exit() {
+	sceClibPrintf("vitaSAS module exit\n");
+	return SCE_KERNEL_STOP_SUCCESS;
+}
+
+void _start() __attribute__((weak, alias("module_start")));
+int module_start(SceSize argc, void *args) {
+	sceClibPrintf("vita2d_sys module start, ver. %d\n", VITASAS_VERSION_INTERNAL);
+	return SCE_KERNEL_START_SUCCESS;
+}
+#endif
 
