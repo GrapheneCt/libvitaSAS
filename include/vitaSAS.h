@@ -1,6 +1,7 @@
 #ifndef VITASAS_H
 #define VITASAS_H
 
+#include <psp2/scebase_common.h>
 #include <psp2/audiodec.h> 
 #include <psp2/audioout.h>
 
@@ -8,7 +9,7 @@
 extern "C" {
 #endif
 
-#define VITASAS_VERSION_INTERNAL 0120
+#define VITASAS_VERSION_INTERNAL 0121
 
 #ifndef VITASAS_VERSION
 #define VITASAS_VERSION VITASAS_VERSION_INTERNAL
@@ -16,10 +17,8 @@ extern "C" {
 
 //#define VITASAS_PRX
 
-#if _SCE_TARGET_OS_PSP2
-#ifdef VITASAS_PRX
+#if _SCE_HOST_COMPILER_SNC && defined(VITASAS_PRX)
 #define PRX_INTERFACE __declspec (dllexport)
-#endif
 #else
 #define PRX_INTERFACE
 #endif

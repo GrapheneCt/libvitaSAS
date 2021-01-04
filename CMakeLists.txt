@@ -39,9 +39,9 @@ target_link_libraries(${PROJECT_NAME}
   SceLibKernel_stub_weak
   SceIofilemgr_stub_weak 	
   SceSysmodule_stub_weak 
-  SceCodecEngine_stub_weak 
-  SceKernelThreadMgr_stub_weak
-  SceAudiodec_stub_weak 
+  SceCodecEngineUser_stub_weak
+  SceThreadmgr_stub_weak
+  SceAudiodecUser_stub_weak
   SceAudio_stub_weak  
   SceDbg_stub_weak 
   SceSas_stub_weak 
