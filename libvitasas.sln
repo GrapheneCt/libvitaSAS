@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.1401
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvitasas", "libvitasas\libvitasas.vcxproj", "{8BB188AC-0B8B-4595-99EC-764C161EA161}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|PSVita = Debug|PSVita
+		Release|PSVita = Release|PSVita
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8BB188AC-0B8B-4595-99EC-764C161EA161}.Debug|PSVita.ActiveCfg = Debug|PSVita
+		{8BB188AC-0B8B-4595-99EC-764C161EA161}.Debug|PSVita.Build.0 = Debug|PSVita
+		{8BB188AC-0B8B-4595-99EC-764C161EA161}.Release|PSVita.ActiveCfg = Release|PSVita
+		{8BB188AC-0B8B-4595-99EC-764C161EA161}.Release|PSVita.Build.0 = Release|PSVita
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B440158F-9E18-49E7-8232-48B57FE4B773}
+	EndGlobalSection
+EndGlobal
