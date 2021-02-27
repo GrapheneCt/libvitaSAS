@@ -22,7 +22,6 @@ include_directories(
 
 link_directories(
   ${VDSUITE_LIBRARY_DIRECTORIES}
-  libvitasas/include
 )
 
 add_library(${PROJECT_NAME} STATIC
@@ -35,8 +34,6 @@ add_library(${PROJECT_NAME} STATIC
   libvitasas/source/audio_dec_aac.c
 )
 
-add_definitions(-DVITASAS_PRX)
-
 add_library("${PROJECT_NAME}.suprx" SHARED
   libvitasas/source/SAS.c
   libvitasas/source/heap.c
@@ -46,6 +43,8 @@ add_library("${PROJECT_NAME}.suprx" SHARED
   libvitasas/source/audio_dec_mp3.c
   libvitasas/source/audio_dec_aac.c
 )
+
+target_compile_definitions("${PROJECT_NAME}.suprx" PUBLIC -DVITASAS_PRX)
 
 target_link_libraries("${PROJECT_NAME}.suprx"
   SceSysmem_stub_weak
