@@ -1,7 +1,7 @@
 #ifndef VITASAS_H
 #define VITASAS_H
 
-#include <stddef.h>
+#include <kernel.h>
 #include <scebase.h>
 #include <audiodec.h> 
 #include <audioout.h>

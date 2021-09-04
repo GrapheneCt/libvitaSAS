@@ -56,11 +56,14 @@
   <PropertyGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|PSVita'">
     <ClCompile>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;VITASAS_PRX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalOptions>--no-required-files</AdditionalOptions>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|PSVita'">
     <ClCompile>
@@ -74,8 +77,12 @@
     </Link>
     <Link>
       <InfoStripping>StripSymsAndDebug</InfoStripping>
-      <AdditionalDependencies>-lSceSysmem_stub_weak;-lSceIofilemgr_stub_weak;-lSceSysmodule_stub_weak;-lSceCodecEngineUser_stub_weak;-lSceThreadmgr_stub_weak;-lSceAudiodecUser_stub_weak;-lSceAudio_stub_weak;-lSceDbg_stub_weak;-lSceSas_stub_weak;-lSceFios2_stub_weak;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lSceSysmodule_stub_weak;-lSceCodecEngineUser_stub_weak;-lSceAudiodecUser_stub_weak;-lSceAudio_stub_weak;-lSceDbg_stub_weak;-lSceSas_stub_weak;-lSceFios2_stub_weak;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>--no-required-files</AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(SCE_PSP2_SDK_DIR)/host_tools/build/bin/vdsuite-pubprx.exe" --strip --compress "$(LocalDebuggerCommand)" "$(LocalDebuggerCommand)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Condition="'$(ConfigurationType)' == 'Makefile' and Exists('$(VCTargetsPath)\Platforms\$(Platform)\SCE.Makefile.$(Platform).targets')" Project="$(VCTargetsPath)\Platforms\$(Platform)\SCE.Makefile.$(Platform).targets" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
